@@ -1,13 +1,12 @@
 /**
- * File              : src/main.cc
+ * File              : src/freenect_grabber.cc
  * Author            : Siddharth J. Singh <j.singh.logan@gmail.com>
- * Date              : 09.08.2017
+ * Date              : 10.08.2017
  * Last Modified Date: 10.08.2017
  * Last Modified By  : Siddharth J. Singh <j.singh.logan@gmail.com>
  */
-
 /**
- * src/main.cc
+ * freenect_grabber.cc
  * Copyright (c) 2017 Siddharth J. Singh <j.singh.logan@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,12 +22,14 @@
  * limitations under the License.
  */
 
-#include <iostream>
 #include "freenect_grabber.h"
 
-int main() {
-
-    FreenectGrabber grabber;
-    grabber.grab_image();
-    return 0;
+FreenectGrabber::FreenectGrabber() {
+    _logger = spdlog::stdout_color_mt("FreenectGrabber");
 }
+
+void FreenectGrabber::grab_image() {
+    _logger->info("in grab_image");
+}
+
+

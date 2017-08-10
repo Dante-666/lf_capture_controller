@@ -1,13 +1,13 @@
 /**
- * File              : src/main.cc
+ * File              : inc/data_grabber.h
  * Author            : Siddharth J. Singh <j.singh.logan@gmail.com>
- * Date              : 09.08.2017
+ * Date              : 10.08.2017
  * Last Modified Date: 10.08.2017
  * Last Modified By  : Siddharth J. Singh <j.singh.logan@gmail.com>
  */
 
 /**
- * src/main.cc
+ * data_grabber.h
  * Copyright (c) 2017 Siddharth J. Singh <j.singh.logan@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,12 +23,11 @@
  * limitations under the License.
  */
 
-#include <iostream>
-#include "freenect_grabber.h"
+#include <opencv2/opencv.hpp>
+#include <spdlog/spdlog.h>
 
-int main() {
-
-    FreenectGrabber grabber;
-    grabber.grab_image();
-    return 0;
-}
+class DataGrabber {
+    public:
+        virtual void grab_image() = 0;
+        
+};

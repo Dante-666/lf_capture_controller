@@ -12,13 +12,12 @@ SRCEXT := cc
 SOURCES := $(shell find  $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%, $(BUILDDIR)/%, $(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g -std=gnu++14 -fPIC
-INC := -I include #-I $(OGREDIR) -I $(OGREDIR)/Overlay -I $(OISDIR)
+INC := -Iinc -I/usr/local/include
 #INC := $(INC) -I $(OGREBULLETDIR)/Collisions/include -I $(OGREBULLETDIR)/Dynamics/include -I $(BULLETDIR)
 #LIBDIR := -L/usr/local/lib/OgreBullet
-#LIB := -lOgreMain -lBulletDynamics -lConvexDecomposition -lBulletSoftBody -lLinearMath -lOgreOverlay
-#LIB := $(LIB) -lOIS-1.3.0 -lboost_system -lX11 -lXt -lXaw -lpthread -ldl -lboost_thread -lfreeimage -lzzip
-#LIB := $(LIB) -lz -lfreetype -lrt -lxcb -lSM -lICE -lXext -lXmu -lXpm -lbz2 -lpng16 -lharfbuzz -lXau
-#LIB := $(LIB) -lXdmcp -luuid -lglib-2.0 -lgraphite2 -lpcre -lOgreBulletCollisions -lOgreBulletDynamics
+
+LIB := $(shell pkg-config --libs opencv)
+LIB := $(LIB) -pthread
 
 $(TARGET): $(OBJECTS)
 	@echo " Linking..."
