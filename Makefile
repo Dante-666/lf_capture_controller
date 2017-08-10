@@ -17,11 +17,12 @@ INC := -Iinc -I/usr/local/include
 #LIBDIR := -L/usr/local/lib/OgreBullet
 
 LIB := $(shell pkg-config --libs opencv)
-LIB := $(LIB) -pthread
+LIB := $(LIB) -lpthread
+LIB := $(LIB) -lfreenect
 
 $(TARGET): $(OBJECTS)
 	@echo " Linking..."
-	@echo " $(CC) $^ $(LIBDIR) $(LIB) -o $(TARGET) "; $(CC) $(LIBDIR) $(LIB) $^ -o $(TARGET) 
+	@echo " $(CC) $^ $(LIBDIR) $(LIB) -o $(TARGET) "; $(CC) $^ $(LIBDIR) $(LIB) -o $(TARGET) 
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(@D)

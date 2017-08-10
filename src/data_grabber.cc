@@ -1,13 +1,13 @@
 /**
- * File              : inc/freenect_grabber.h
+ * File              : src/data_grabber.cc
  * Author            : Siddharth J. Singh <j.singh.logan@gmail.com>
  * Date              : 10.08.2017
- * Last Modified Date: 11.08.2017
+ * Last Modified Date: 10.08.2017
  * Last Modified By  : Siddharth J. Singh <j.singh.logan@gmail.com>
  */
 
 /**
- * inc/freenect_grabber.h
+ * src/data_grabber.cpp
  * Copyright (c) 2017 Siddharth J. Singh <j.singh.logan@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,18 +23,12 @@
  * limitations under the License.
  */
 
-#ifndef __FREENECT_GRABBER_H_
-#define __FREENECT_GRABBER_H_
-#include <libfreenect/libfreenect.h>
 #include "data_grabber.h"
 
-class FreenectGrabber : public DataGrabber {
-    public:
-       FreenectGrabber();
-       void grab_image(cv::Mat& image);
-    private:
-       bool help;
-       void *videoBuf;
-};
+DataGrabber::DataGrabber(std::string className){
+    _logger = spdlog::stdout_color_mt(className);
+}
 
-#endif //__FREENECT_GRABBER_H_
+std::shared_ptr<spdlog::logger> DataGrabber::__logger() {
+    return _logger;
+}

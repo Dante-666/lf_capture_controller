@@ -29,6 +29,7 @@
 int main() {
 
     FreenectGrabber grabber;
-    grabber.grab_image();
+    cv::Mat image;
+    grabber.grab_image(image);
     return 0;
 }

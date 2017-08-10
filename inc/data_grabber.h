@@ -23,11 +23,19 @@
  * limitations under the License.
  */
 
+#ifndef __DATA_GRABBER_H_
+#define __DATA_GRABBER_H_
 #include <opencv2/opencv.hpp>
 #include <spdlog/spdlog.h>
 
 class DataGrabber {
     public:
-        virtual void grab_image() = 0;
-        
+        DataGrabber(std::string className);
+        virtual void grab_image(cv::Mat& image) = 0;
+        std::shared_ptr<spdlog::logger> __logger();
+    
+    private:
+        std::shared_ptr<spdlog::logger> _logger;
 };
+
+#endif //__DATA_GRABBER_H_
