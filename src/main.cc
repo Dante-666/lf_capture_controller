@@ -2,7 +2,7 @@
  * File              : src/main.cc
  * Author            : Siddharth J. Singh <j.singh.logan@gmail.com>
  * Date              : 09.08.2017
- * Last Modified Date: 10.08.2017
+ * Last Modified Date: 21.08.2017
  * Last Modified By  : Siddharth J. Singh <j.singh.logan@gmail.com>
  */
 
@@ -25,11 +25,14 @@
 
 #include <iostream>
 #include "freenect_grabber.h"
+#include <time.h>
+#include <unistd.h>
 
 int main() {
 
-    FreenectGrabber grabber;
-    cv::Mat image;
-    grabber.grab_image(image);
+    //FreenectGrabber grabber;
+    //cv::Mat image;
+    //grabber.grab_image(image);
+    //
     return 0;
 }
