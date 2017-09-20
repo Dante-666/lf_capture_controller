@@ -25,6 +25,7 @@
 
 #include <iostream>
 #include "freenect_grabber.h"
+#include "ucon_link.h"
 #include <time.h>
 #include <unistd.h>
 
@@ -33,6 +34,8 @@ int main() {
     //FreenectGrabber grabber;
     //cv::Mat image;
     //grabber.grab_image(image);
-    //
+    
+    UConLink link("/dev/ttyUSB0", 500000, "8E2");
+    
     return 0;
 }

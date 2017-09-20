@@ -36,11 +36,10 @@
 
 class UConLink {
     public:
-        UConLink(char* port, int baud, char* fmt);
+        UConLink(const char* port, const int baud, const char* fmt);
+        ~UConLink();
         void writeByte(uint8_t data);
         void readByte(uint8_t* data);
-        std::shared_ptr<spdlog::logger> __logger();
-
     private:
         int fd;
         std::shared_ptr<spdlog::logger> _logger;
