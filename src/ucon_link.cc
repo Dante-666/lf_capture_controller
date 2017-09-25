@@ -55,11 +55,16 @@ UConLink::UConLink(const char* port, const int baud, const char* fmt) {
     struct termios params;
     memset(&params, 0, sizeof(termios));
 
-    _logger->trace("Speed : {0}, {1}", params.c_ispeed, params.c_ospeed);
-    
     cfsetspeed(&params, B500000);
-
     _logger->trace("Speed : {0}, {1}", params.c_ispeed, params.c_ospeed);
+
+    params.c_cflag |= PARENB | CSTOPB | CS8;
+    _logger->trace("Frame flags : {0}", params.c_cflag);
+
+    if (tcsetattr(this->fd, TCSANOW, &params) != 0)
+        _logger->error("Error in setting termios attributes!!!");
+    else
+        _logger->trace("Baud rate : {0}, Stopbits : {1}, Length : {2}, Parity : {3}", baud, fmt[2], fmt[0], fmt[1]);
 
 }
 
@@ -72,5 +77,12 @@ void UConLink::readByte(uint8_t* data) {
     *data = 1;
 }
 
-void UConLink::writeByte(uint8_t data) {}
+void UConLink::writeByte(uint8_t data) {
+    uint8_t *buff = (uint8_t *)malloc(1);
+    buff[0] = data;
+
+    _logger->trace("Data written : {0}", data);
+
+    write(this->fd, buff, 1);
+}
 

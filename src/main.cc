@@ -23,19 +23,36 @@
  * limitations under the License.
  */
 
-#include <iostream>
+#include <signal.h>
+#include <stdio.h>
+
 #include "freenect_grabber.h"
 #include "ucon_link.h"
-#include <time.h>
-#include <unistd.h>
+
+bool run = true;
+
+void signal_hd(int signum){
+    if(signum == SIGINT)
+        run = false;
+}
 
 int main() {
+
+    signal(SIGINT, signal_hd);
 
     //FreenectGrabber grabber;
     //cv::Mat image;
     //grabber.grab_image(image);
     
-    UConLink link("/dev/ttyUSB0", 500000, "8E2");
+    UConLink link("/dev/ttyUSB1", 500000, "8E2");
+    uint8_t data = 1;
+    unsigned int cap;
+
+    while(run) {
+        scanf("%x", &cap);
+        data = 0xFF & cap;
+        link.writeByte(data);
+    }
     
     return 0;
 }
