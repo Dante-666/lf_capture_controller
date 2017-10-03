@@ -20,7 +20,7 @@ LIB := $(shell pkg-config --libs opencv)
 LIB := $(LIB) -lpthread
 LIB := $(LIB) -lfreenect
 
-$(TARGET): $(OBJECTS)
+$(TARGET): $(OBJECTS) | subsystem
 	@echo " Linking..."
 	@echo " $(CC) $^ $(LIBDIR) $(LIB) -o $(TARGET) "; $(CC) $^ $(LIBDIR) $(LIB) -o $(TARGET) 
 
@@ -28,10 +28,13 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(@D)
 	@echo " $(CC) $(CFLAGS) $(INC) -c -o $@ $<"; $(CC) $(CFLAGS) $(INC) -c -o $@ $<
 
-clean:
-	@echo " Cleaning..."
-	@echo " $(RM) -r $(BUILDDIR) $(TARGET)"; $(RM) -r $(BUILDDIR) $(TARGET)
+subsystem:
+	$(MAKE) -C controller
 
+clean:
+	@echo " Cleaning subsystem..."; $(MAKE) -C controller clean
+	@echo " Cleaning...";
+	@echo " $(RM) -r build/*.o"; $(RM) -r build/*.o
 tester:
 	@echo " Testing..."
 

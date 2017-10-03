@@ -34,5 +34,12 @@ thesis
 *.out
 *.app
 
+# Microcontroller
+*.elf
+*.hex
+*.eep
+*.lss
+*.sym
+
 # vim Swap files
 *.swp

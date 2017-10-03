@@ -11,31 +11,27 @@ SRCDIR := src
 BUILDDIR := ../build
 
 SRCEXT := c
-SOURCES := $(shell find  $(SRCDIR) -type f -name *.$(SRCEXT))
-OBJECTS := $(patsubst $(SRCDIR)/%, $(BUILDDIR)/%, $(SOURCES:.$(SRCEXT)=.o))
-ELFS := $(patsubst $(SRCDIR)/%, $(BUILDDIR)/%, $(SOURCES:.$(SRCEXT)=.elf))
 CFLAGS := -O$(OPT) -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums \
 		  -Wall -Wstrict-prototypes -mmcu=$(MCU) -D__TWEAK__ 
 
-TARGETS :=  
-
-#all: $(BUILDDIR)/$(TARGET).elf $(BUILDDIR)/$(TARGET).hex $(BUILDDIR)/$(TARGET).eep \
-   	 $(BUILDDIR)/$(TARGET).lss $(BUILDDIR)/$(TARGET).sym
-
-all: $(BUILDDIR)/%.elf $(BUILDDIR)/%.hex $(BUILDDIR)/%.eep \
-   	 $(BUILDDIR)/%.lss $(BUILDDIR)/%.sym
+all: $(BUILDDIR)/master.hex $(BUILDDIR)/slave.hex \
+	 $(BUILDDIR)/master.eep $(BUILDDIR)/slave.eep \
+	 $(BUILDDIR)/master.lss $(BUILDDIR)/slave.lss \
+	 $(BUILDDIR)/master.sym $(BUILDDIR)/slave.sym \
+	 $(BUILDDIR)/master.elf $(BUILDDIR)/slave.elf \
+	 $(BUILDDIR)/master.o $(BUILDDIR)/slave.o 
 
 $(BUILDDIR)/%.hex: $(BUILDDIR)/%.elf
 	@echo
 	@echo " Generating final output for FLASH..."
-	@echo " avr-objcopy -O ihex -R .eeprom $< $@"
-	avr-objcopy -O ihex -R .eeprom $< $@
+	@echo " avr-objcopy -O ihex -R .eeprom $< $@";\
+	avr-objcopy -O ihex -R .eeprom $< $@ 2> /dev/null
 
 $(BUILDDIR)/%.eep: $(BUILDDIR)/%.elf
 	@echo
 	@echo " Generating final output for EEPROM..."
-	@echo " avr-objcopy -j .eeprom --set-section-flags=.eeprom="alloc,load" --change-section-lma .eeprom=0 -O ihex $< $@"
-	avr-objcopy -j .eeprom --change-section-lma .eeprom=0 -O ihex $< $@
+	@echo " avr-objcopy -j .eeprom --change-section-lma .eeprom=0 -O ihex $< $@";\
+	avr-objcopy -j .eeprom --change-section-lma .eeprom=0 -O ihex $< $@ 2> /dev/null
 
 $(BUILDDIR)/%.lss: $(BUILDDIR)/%.elf
 	@echo
@@ -47,10 +43,11 @@ $(BUILDDIR)/%.sym: $(BUILDDIR)/%.elf
 	@echo " Generating symbol table from elf output..."
 	@echo " avr-nm -n $< > $@"; avr-nm -n $< > $@
 
-$(BUILDDIR)/%.elf: $(OBJECTS)
+$(BUILDDIR)/%.elf: $(BUILDDIR)/%.o
 	@echo
 	@echo " Linking..."
 	@echo " $(CC) $(CFLAGS) $< -o $@ $(LDFLAGS)"; $(CC) $(CFLAGS) $< -o $@ $(LDFLAGS)
+	@echo " "; avr-size -C --mcu=$(MCU) $@
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(@D)
@@ -59,7 +56,7 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 
 clean:
 	@echo " Cleaning..."
-	@echo " $(RM) -r $(BUILDDIR) $(TARGET)"; $(RM) -r $(BUILDDIR) $(TARGET)
+	@echo " $(RM) -r $(BUILDDIR)/master.* $(BUILDDIR)/slave.* "; $(RM) -r $(BUILDDIR)/master.* $(BUILDDIR)/slave.*
 
 tester:
 	@echo " Testing..."

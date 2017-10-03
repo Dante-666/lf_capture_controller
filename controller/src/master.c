@@ -49,7 +49,7 @@ void USART_rx(uint8_t* data) {
 
 void SPI_master_init(void) {
     cli();
-    DDRB = 1<<DDRB4 | 1<<DDRB5 | 1 << DDRB7; 
+    DDRB = 1<<DDB5 | 1<<DDB4 | 1 << DDB3 | 1<<DDB2; 
     SPCR = 1<<SPE | 1<<MSTR | 1<<SPR0;
     sei();
 }
@@ -72,6 +72,8 @@ int main(void) {
     
     // Set this to be a slave selector port
     // At most 3 slaves will be used for 3DOF camera mover.
+    DDRC = 1<<DDC0 | 1<<DDC1;
+    PORTC = 1<<PORTC0 | 1<<PORTC1;
    
     // Disable functions which are not being used
 
@@ -82,17 +84,17 @@ int main(void) {
 ISR(TIMER1_COMPA_vect) {
 }
 
-ISR(USART_RXC_vect) {
+ISR(USART_RX_vect) {
     uint8_t data;
     USART_rx(&data);
 
-    if(flag = 0x80) {
+    if(flag == 0x80) {
         // Data flow commences here
         // Set the motor directions here
         if(data & X_B) {
-            PORTA = 0x00;
+            PORTC &= 0xFE;
             SPI_master_tx(data);
-            PORTA = 0x01;        
+            PORTC |= 0x01;        
         }
         if(data & Y_B) {
         
@@ -120,7 +122,7 @@ ISR(USART_RXC_vect) {
 }
 
 // May not be used at all
-ISR(USART_TXC_vect) {
+ISR(USART_TX_vect) {
 
 }
 
