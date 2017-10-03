@@ -34,12 +34,31 @@
 #include <errno.h>   /* ERROR Number Definitions           */
 #include <spdlog/spdlog.h>
 
+#define START       17
+#define SUCCESS     19
+#define STOP        23
+
+#define X_F         0x01
+#define Y_F         0x04
+#define Z_F         0x10
+#define X_B         0x03
+#define Y_B         0x0C
+#define Z_B         0x30
+
 class UConLink {
     public:
         UConLink(const char* port, const int baud, const char* fmt);
         ~UConLink();
+        // TODO: Do IO error handling over here
+        // Always allocate memory before sending it off here
         void writeByte(uint8_t data);
+        void writeWord(uint8_t* word, uint8_t length);
         void readByte(uint8_t* data);
+        void readWord(uint8_t* word, uint8_t length);
+        // TODO: Must be built with exception handling
+        // to avoid overrunning the motor positions
+        // remove the dummy part later.
+        void move(uint8_t moveit, double length, uint16_t dummy);
     private:
         int fd;
         std::shared_ptr<spdlog::logger> _logger;

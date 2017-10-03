@@ -44,14 +44,15 @@ int main() {
     //cv::Mat image;
     //grabber.grab_image(image);
     
-    UConLink link("/dev/ttyUSB1", 500000, "8E2");
-    uint8_t data = 1;
-    unsigned int cap;
+    UConLink link("/dev/ttyUSB0", 500000, "8E2");
+    //uint8_t data = 1;
+    uint32_t cap = 0;
+    uint8_t moveit = X_F | Y_F | Z_F;
 
     while(run) {
+        printf("Waiting for key input...");
         scanf("%x", &cap);
-        data = 0xFF & cap;
-        link.writeByte(data);
+        link.move(moveit, 1.0, cap);
     }
     
     return 0;

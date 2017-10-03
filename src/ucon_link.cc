@@ -31,7 +31,7 @@ UConLink::UConLink(const char* port, const int baud, const char* fmt) {
     _logger->set_level(spdlog::level::trace);
 
     _logger->trace("Opening file {0}", port);
-    this->fd = open(port, O_RDWR | O_NOCTTY | O_NDELAY);
+    this->fd = open(port, O_RDWR | O_NOCTTY);// | O_NDELAY);
 
     // TODO: handshake mechanism, uC sends message continously
     // untill acknowledged by the PC    
@@ -55,7 +55,7 @@ UConLink::UConLink(const char* port, const int baud, const char* fmt) {
     struct termios params;
     memset(&params, 0, sizeof(termios));
 
-    cfsetspeed(&params, B500000);
+    cfsetspeed(&params, B4800);
     _logger->trace("Speed : {0}, {1}", params.c_ispeed, params.c_ospeed);
 
     params.c_cflag |= PARENB | CSTOPB | CS8;
@@ -74,15 +74,93 @@ UConLink::~UConLink() {
 }
 
 void UConLink::readByte(uint8_t* data) {
-    *data = 1;
+    this->readWord(data, 1);
+}
+
+void UConLink::readWord(uint8_t* data, uint8_t length) {
+    read(this->fd, data, length);
 }
 
 void UConLink::writeByte(uint8_t data) {
-    uint8_t *buff = (uint8_t *)malloc(1);
-    buff[0] = data;
-
-    _logger->trace("Data written : {0}", data);
-
-    write(this->fd, buff, 1);
+    
+    _logger->trace("Data written : {0:x}", data);
+    
+    write(this->fd, &data, 1);
 }
 
+void UConLink::writeWord(uint8_t* word, uint8_t length) {
+
+    _logger->trace("Data written : {0:x}", word);
+
+    write(this->fd, word, length);
+}
+
+void UConLink::move(uint8_t moveit, double length, uint16_t dummy) {
+
+    _logger->trace("Driving {0:b} for length : {1}", moveit, length);
+    
+    uint8_t retval;
+    // First set the motor direction and which ones to move
+    this->writeByte(START);
+    this->writeByte(moveit);
+    this->readByte(&retval);
+
+    if(retval != SUCCESS) {
+        _logger->error("Controller not responding...");
+        //TODO: do error handling here later.
+        exit(-1);
+    }
+    
+    uint8_t* command = (uint8_t *) malloc(4);
+
+    //TODO: do the trajectory computations here.
+
+    if(moveit & X_F) {
+        command[0] = moveit;    //Freq
+        command[1] = moveit;    //no. of 10 rotations
+        command[2] = dummy & 0xFF;
+        command[3] = dummy >> 8;
+        //this->writeByte(XON);
+        this->writeWord(command, 4);
+        this->readByte(&retval);
+        
+        if(retval != SUCCESS) {
+            _logger->error("Controller not responding...");
+            //TODO: do error handling here later.
+            exit(-1);
+        }
+    }
+
+    if(moveit & Y_F) {
+        command[0] = moveit;    //Freq
+        command[1] = moveit;    //no. of 10 rotations
+        command[2] = dummy & 0xFF;
+        command[3] = dummy >> 8;
+        //this->writeByte(XON);
+        this->writeWord(command, 4);
+        this->readByte(&retval);
+        
+        if(retval != SUCCESS) {
+            _logger->error("Controller not responding...");
+            //TODO: do error handling here later.
+            exit(-1);
+        }
+    }
+    
+    if(moveit & Z_F) {
+        command[0] = moveit;    //Freq
+        command[1] = moveit;    //no. of 10 rotations
+        command[2] = dummy & 0xFF;
+        command[3] = dummy >> 8;
+        //this->writeByte(XON);
+        this->writeWord(command, 4);
+        this->readByte(&retval);
+        
+        if(retval != SUCCESS) {
+            _logger->error("Controller not responding...");
+            //TODO: do error handling here later.
+            exit(-1);
+        }
+    }
+
+}
