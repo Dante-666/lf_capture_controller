@@ -12,13 +12,13 @@ SRCEXT := cc
 SOURCES := $(shell find  $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%, $(BUILDDIR)/%, $(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g -std=gnu++14 -fPIC
-INC := -Iinc -I/usr/local/include
-#INC := $(INC) -I $(OGREBULLETDIR)/Collisions/include -I $(OGREBULLETDIR)/Dynamics/include -I $(BULLETDIR)
+INC := -Iinc -I/usr/local/include -I/usr/local/include/cegui-0
 #LIBDIR := -L/usr/local/lib/OgreBullet
 
 LIB := $(shell pkg-config --libs opencv)
 LIB := $(LIB) -lpthread
 LIB := $(LIB) -lfreenect
+LIB := $(LIB) -lIrrlicht
 
 $(TARGET): $(OBJECTS) | subsystem
 	@echo " Linking..."

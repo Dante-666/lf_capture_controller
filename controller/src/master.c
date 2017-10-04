@@ -13,7 +13,6 @@
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
 #include <avr/power.h>
-#include <avr/iocan32.h>
 
 #define START       17
 #define SUCCESS     19

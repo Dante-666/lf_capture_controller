@@ -28,6 +28,7 @@
 
 #include "freenect_grabber.h"
 #include "ucon_link.h"
+#include "gui.h"
 
 bool run = true;
 
@@ -38,14 +39,13 @@ void signal_hd(int signum){
 
 int main() {
 
-    signal(SIGINT, signal_hd);
-
-    //FreenectGrabber grabber;
-    //cv::Mat image;
-    //grabber.grab_image(image);
+    /*signal(SIGINT, signal_hd);
+    FreenectGrabber grabber;
+    cv::Mat image;
+    grabber.grab_image(image);*/
     
+    /*signal(SIGINT, signal_hd);
     UConLink link("/dev/ttyUSB0", B4800, "8E2");
-    //uint8_t data = 1;
     uint32_t cap = 0;
     uint8_t moveit = X_F | Y_F | Z_F;
 
@@ -53,6 +53,41 @@ int main() {
         printf("Waiting for key input...");
         scanf("%x", &cap);
         link.move(moveit, 1.0, cap);
+    }*/
+
+    irr::IrrlichtDevice *device;
+    irr::video::IVideoDriver *driver;
+    irr::scene::ISceneManager *smgr;
+    irr::scene::ICameraSceneNode *cam;
+
+    device = irr::createDevice(irr::video::EDT_OPENGL, 
+                               irr::core::dimension2d<irr::u32>(800, 600),
+                               32, false, false, false, 0);
+    device->setWindowCaption(L"Cartesian Controller");
+
+    driver = device->getVideoDriver();
+    driver->setTextureCreationFlag(irr::video::ETCF_ALWAYS_32_BIT, true);
+    driver->setTextureCreationFlag(irr::video::ETCF_ALWAYS_16_BIT, false);
+    driver->setTextureCreationFlag(irr::video::ETCF_CREATE_MIP_MAPS, true);
+    driver->setAmbientLight(irr::video::SColor(255, 255, 255, 255));
+
+    smgr = device->getSceneManager();
+
+    cam = smgr->addCameraSceneNode(smgr->getRootSceneNode(),
+                                   irr::core::vector3df(0, 0, 0),
+                                   irr::core::vector3df(0, 0, 1),
+                                   1, true);
+    cam->setFOV(2.0f);
+
+    while(device->run()) {
+        if(device->isWindowActive())
+        {
+            driver->beginScene(true, true, irr::video::SColor(255, 0, 0, 0));
+            smgr->drawAll();
+            driver->endScene();
+        }
+        else
+            device->yield();
     }
     
     return 0;
