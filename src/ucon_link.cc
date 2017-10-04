@@ -55,14 +55,52 @@ UConLink::UConLink(const char* port, const int baud, const char* fmt) {
     struct termios params;
     memset(&params, 0, sizeof(termios));
 
-    cfsetspeed(&params, B4800);
+    cfsetspeed(&params, baud);
     _logger->trace("Speed : {0}, {1}", params.c_ispeed, params.c_ospeed);
 
-    params.c_cflag |= PARENB | CSTOPB | CS8;
+    unsigned int flag;
+    
+    if(fmt[0] == 'E')
+        flag = PARENB;
+    else if(fmt[0] == 'O')
+        flag = PARENB | PARODD;
+    else {
+        _logger->error("Invalid frame format {0}!!!", fmt);
+        this->~UConLink();
+        exit(-1);
+    }
+
+    if(fmt[1] == '8')
+        flag |= CS8;
+    else if(fmt[1] == '7')
+        flag |= CS7;
+    else if(fmt[1] == '6')
+        flag |= CS6;
+    else if(fmt[1] == '5')
+        flag |= CS5;
+    else {
+        _logger->error("Invalid frame format {0}!!!", fmt);
+        this->~UConLink();
+        exit(-1);
+    }
+
+    if(fmt[2] == '2')
+        flag |= CSTOPB;
+    else if(fmt[2] != '1') {
+        _logger->error("Invalid frame format {0}!!!", fmt);
+        this->~UConLink();
+        exit(-1);
+    }
+        
+
+    params.c_cflag |= flag;
     _logger->trace("Frame flags : {0}", params.c_cflag);
 
-    if (tcsetattr(this->fd, TCSANOW, &params) != 0)
+    if (tcsetattr(this->fd, TCSANOW, &params) != 0) {
         _logger->error("Error in setting termios attributes!!!");
+        this->~UConLink();
+        exit(-1);
+    }
     else
         _logger->trace("Baud rate : {0}, Stopbits : {1}, Length : {2}, Parity : {3}", baud, fmt[2], fmt[0], fmt[1]);
 
@@ -108,6 +146,7 @@ void UConLink::move(uint8_t moveit, double length, uint16_t dummy) {
     if(retval != SUCCESS) {
         _logger->error("Controller not responding...");
         //TODO: do error handling here later.
+        this->~UConLink();
         exit(-1);
     }
     
@@ -127,6 +166,7 @@ void UConLink::move(uint8_t moveit, double length, uint16_t dummy) {
         if(retval != SUCCESS) {
             _logger->error("Controller not responding...");
             //TODO: do error handling here later.
+            this->~UConLink();
             exit(-1);
         }
     }
@@ -143,6 +183,7 @@ void UConLink::move(uint8_t moveit, double length, uint16_t dummy) {
         if(retval != SUCCESS) {
             _logger->error("Controller not responding...");
             //TODO: do error handling here later.
+            this->~UConLink();
             exit(-1);
         }
     }
@@ -159,6 +200,7 @@ void UConLink::move(uint8_t moveit, double length, uint16_t dummy) {
         if(retval != SUCCESS) {
             _logger->error("Controller not responding...");
             //TODO: do error handling here later.
+            this->~UConLink();
             exit(-1);
         }
     }

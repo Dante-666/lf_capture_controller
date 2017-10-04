@@ -44,7 +44,7 @@ int main() {
     //cv::Mat image;
     //grabber.grab_image(image);
     
-    UConLink link("/dev/ttyUSB0", 500000, "8E2");
+    UConLink link("/dev/ttyUSB0", B4800, "8E2");
     //uint8_t data = 1;
     uint32_t cap = 0;
     uint8_t moveit = X_F | Y_F | Z_F;

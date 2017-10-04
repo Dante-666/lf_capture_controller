@@ -36,7 +36,8 @@
 
 #define START       17
 #define SUCCESS     19
-#define STOP        23
+#define FAILURE     23
+#define STOP        29
 
 #define X_F         0x01
 #define Y_F         0x04
