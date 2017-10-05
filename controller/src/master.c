@@ -1,5 +1,5 @@
 /**
- * File              : src/base.c
+ * File              : src/master.c
  * Author            : Siddharth J. Singh <j.singh.logan@gmail.com>
  * Date              : 11.09.2017
  * Last Modified Date: 15.09.2017
@@ -13,12 +13,17 @@
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
 #include <avr/power.h>
-#include <avr/iocan32.h>
+
+#define FORWARD     5
+#define BACKWARD    7
+#define MOTORFREE   11
 
 #define START       17
 #define SUCCESS     19
 #define FAILURE     23
 #define STOP        29
+
+#define FETCH       31
 
 #define X_F         0x01
 #define Y_F         0x04
@@ -54,7 +59,7 @@ void USART_rx(uint8_t* data) {
 void SPI_master_init(void) {
     cli();
     DDRB = 1<<DDB5 | 1<<DDB3 | 1 << DDB2; 
-    SPCR = 1<<SPE | 1<<MSTR | 1<<SPR0;
+    SPCR = 1<<SPIE | 1<<SPE | 1<<MSTR | 1<<SPR0;
     sei();
 }
 
@@ -110,36 +115,119 @@ ISR(USART_RX_vect) {
     USART_rx(&data);
 
     if(flag == 0x80) {
+
+        uint8_t s_retval;
+        uint8_t motors = 0x00;
         // Data flow commences here
         // Set the motor directions here
-        if(data & X_B) {
+        if(data & X_F) {
             PORTB &= 0xFB;
-            SPI_master_tx(data);
+            SPI_master_tx(START);
+            if(data & (X_B ^ X_F))
+                SPI_master_tx(BACKWARD);
+            else
+                SPI_master_tx(FORWARD);
+            SPI_master_tx(FETCH);
             PORTB |= 0x04;
+        
+            SPI_master_rx(&s_retval);
+            if(s_retval != SUCCESS)
+                motors |= 0x20;
+            else {
+                flag |= 0x10;
+                flag += 4;
+            }
         }
-        if(data & Y_B) {
-            PORTC &= 0xFE;
-            SPI_master_tx(data);
-            PORTC |= 0x01;        
-        }
-        if(data & Z_B) {
-            PORTC &= 0xFD;
-            SPI_master_tx(data);
-            PORTC |= 0x02;        
-        }
-        // Send the SUCCESS flag
-        USART_tx(SUCCESS);
-    }
-    else if(flag & 0x04) {
-        SPI_master_tx(data);
-        flag &= 0xFB;
-    }
-    else if(flag & 0x08) {
-        SPI_master_tx(data);
-        flag &= 0xF7; 
-    }
-    else if(flag & 0x80) {
 
+        if(data & Y_F) {
+            PORTC &= 0xFE;
+            SPI_master_tx(START);
+            if(data & (Y_B ^ Y_F))
+                SPI_master_tx(BACKWARD);
+            else
+                SPI_master_tx(FORWARD);
+            SPI_master_tx(FETCH);
+            PORTC |= 0x01;
+
+            SPI_master_rx(&s_retval);
+            if(s_retval != SUCCESS)
+                motors |= 0x40;
+            else {
+                flag |= 0x20;
+                flag += 4;
+            }
+        }
+
+        if(data & Z_F) {
+            PORTC &= 0xFD;
+            SPI_master_tx(START);
+            if(data & (Z_B ^ Z_F))
+                SPI_master_tx(BACKWARD);
+            else
+                SPI_master_tx(FORWARD);
+            SPI_master_tx(FETCH);
+            PORTC |= 0x02;
+        
+            SPI_master_rx(&s_retval);
+            if(s_retval != SUCCESS)
+                motors |= 0x80;
+            else {
+                flag |= 0x40;
+                flag += 4;
+            }
+        }
+        
+        if(motors) {
+            // Reset the state to scanning start word
+            flag = 0x00;
+            USART_tx(FAILURE | motors);
+        }
+        else {
+            USART_tx(SUCCESS);
+        }
+    }
+    else if(flag & 0x10) {
+        PORTB &= 0xFB;
+        SPI_master_tx(data);
+        PORTB |= 0x04;
+        flag--;
+        if((flag & 0x03) == 0x00){
+            flag &= 0xEF;
+            USART_tx(SUCCESS);
+        }
+        if(flag == 0x80) {
+            flag = 0x00;
+            USART_tx(STOP);
+        }
+    }
+    else if(flag & 0x20) {
+        PORTC &= 0xFE;
+        SPI_master_tx(data);
+        PORTC |= 0x01;
+        flag--;
+        if((flag & 0x03) == 0x00) {
+            flag &= 0xDF;
+            USART_tx(SUCCESS);
+        }
+        if(flag == 0x80) {
+            flag = 0x00;
+            USART_tx(STOP);
+        }
+
+    }
+    else if(flag & 0x40) {
+        PORTC &= 0xFD;
+        SPI_master_tx(data);
+        PORTC |= 0x02;
+        flag--;
+        if((flag & 0x03) == 0x00) {
+            flag &= 0xBF;
+            USART_tx(SUCCESS);
+        }
+        if(flag == 0x80) {
+            flag = 0x00;
+            USART_tx(STOP);
+        }
     }
     else if(data == START) {
         flag = 0x80;
@@ -148,11 +236,6 @@ ISR(USART_RX_vect) {
 
 // May not be used at all
 ISR(USART_TX_vect) {
-
 }
-
-// May be used to randomize the
-// key_x register when all the
-// data is successfully transferred
 ISR(SPI_STC_vect) {
 }

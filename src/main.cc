@@ -47,7 +47,7 @@ int main() {
     UConLink link("/dev/ttyUSB0", B4800, "8E2");
     //uint8_t data = 1;
     uint32_t cap = 0;
-    uint8_t moveit = X_F | Y_F | Z_F;
+    uint8_t moveit = Z_B;
 
     while(run) {
         printf("Waiting for key input...");

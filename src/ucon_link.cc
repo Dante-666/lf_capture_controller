@@ -144,7 +144,16 @@ void UConLink::move(uint8_t moveit, double length, uint16_t dummy) {
     this->readByte(&retval);
 
     if(retval != SUCCESS) {
-        _logger->error("Controller not responding...");
+        if((retval & FAILURE) == FAILURE)
+            _logger->error("There was some error with the slave units...");
+        if(retval & 0x80)
+            _logger->error("Motor X controller is not responding...");
+        else if(retval & 0x40)
+            _logger->error("Motor Y controller is not responding...");
+        else if(retval & 0x20)
+            _logger->error("Motor Z controller is not responding...");
+        else
+            _logger->error("Main controller is not responding...");
         //TODO: do error handling here later.
         this->~UConLink();
         exit(-1);
@@ -155,8 +164,8 @@ void UConLink::move(uint8_t moveit, double length, uint16_t dummy) {
     //TODO: do the trajectory computations here.
 
     if(moveit & X_F) {
-        command[0] = moveit;    //Freq
-        command[1] = moveit;    //no. of 10 rotations
+        command[0] = dummy;    //Freq
+        command[1] = dummy;    //no. of 10 rotations
         command[2] = dummy & 0xFF;
         command[3] = dummy >> 8;
         //this->writeByte(XON);
@@ -164,7 +173,7 @@ void UConLink::move(uint8_t moveit, double length, uint16_t dummy) {
         this->readByte(&retval);
         
         if(retval != SUCCESS) {
-            _logger->error("Controller not responding...");
+            _logger->error("Main controller is not responding...");
             //TODO: do error handling here later.
             this->~UConLink();
             exit(-1);
@@ -172,8 +181,8 @@ void UConLink::move(uint8_t moveit, double length, uint16_t dummy) {
     }
 
     if(moveit & Y_F) {
-        command[0] = moveit;    //Freq
-        command[1] = moveit;    //no. of 10 rotations
+        command[0] = dummy;    //Freq
+        command[1] = dummy;    //no. of 10 rotations
         command[2] = dummy & 0xFF;
         command[3] = dummy >> 8;
         //this->writeByte(XON);
@@ -181,7 +190,7 @@ void UConLink::move(uint8_t moveit, double length, uint16_t dummy) {
         this->readByte(&retval);
         
         if(retval != SUCCESS) {
-            _logger->error("Controller not responding...");
+            _logger->error("Main controller is not responding...");
             //TODO: do error handling here later.
             this->~UConLink();
             exit(-1);
@@ -189,8 +198,8 @@ void UConLink::move(uint8_t moveit, double length, uint16_t dummy) {
     }
     
     if(moveit & Z_F) {
-        command[0] = moveit;    //Freq
-        command[1] = moveit;    //no. of 10 rotations
+        command[0] = dummy;    //Freq
+        command[1] = dummy;    //no. of 10 rotations
         command[2] = dummy & 0xFF;
         command[3] = dummy >> 8;
         //this->writeByte(XON);
@@ -198,11 +207,20 @@ void UConLink::move(uint8_t moveit, double length, uint16_t dummy) {
         this->readByte(&retval);
         
         if(retval != SUCCESS) {
-            _logger->error("Controller not responding...");
+            _logger->error("Main controller is not responding...");
             //TODO: do error handling here later.
             this->~UConLink();
             exit(-1);
         }
     }
+
+    this->readByte(&retval);
+    if(retval != STOP) {
+        _logger->error("Main controller is not responding...");
+        this->~UConLink();
+        exit(-1);
+    }
+
+    free(command);
 
 }
