@@ -31,6 +31,7 @@ BASE_FLAGS = [
     '-I/usr/lib/',
     '-I/usr/include/',
     '-I/usr/local/include',
+    '-I/usr/local/include/cegui-0',
     '-Iinc'
 ]
 
