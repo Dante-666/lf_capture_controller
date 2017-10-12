@@ -189,45 +189,53 @@ ISR(USART_RX_vect) {
     else if(flag & 0x10) {
         PORTB &= 0xFB;
         SPI_master_tx(data);
-        PORTB |= 0x04;
         flag--;
         if((flag & 0x03) == 0x00){
+        
             flag &= 0xEF;
-            USART_tx(SUCCESS);
+        
+            SPI_master_tx(FETCH);
+            uint8_t s_retval;
+            SPI_master_rx(&s_retval);
+            if(s_retval != STOP) USART_tx(FAILURE);
+            else USART_tx(SUCCESS);
+        
         }
-        if(flag == 0x80) {
-            flag = 0x00;
-            USART_tx(STOP);
-        }
+        PORTB |= 0x04;
     }
     else if(flag & 0x20) {
         PORTC &= 0xFE;
         SPI_master_tx(data);
-        PORTC |= 0x01;
         flag--;
         if((flag & 0x03) == 0x00) {
+            
             flag &= 0xDF;
-            USART_tx(SUCCESS);
+            
+            SPI_master_tx(FETCH);
+            uint8_t s_retval;
+            SPI_master_rx(&s_retval);
+            if(s_retval != STOP) USART_tx(FAILURE);
+            else USART_tx(SUCCESS);
+        
         }
-        if(flag == 0x80) {
-            flag = 0x00;
-            USART_tx(STOP);
-        }
-
+        PORTC |= 0x01;
     }
     else if(flag & 0x40) {
         PORTC &= 0xFD;
         SPI_master_tx(data);
-        PORTC |= 0x02;
         flag--;
         if((flag & 0x03) == 0x00) {
+            
             flag &= 0xBF;
-            USART_tx(SUCCESS);
+            
+            SPI_master_tx(FETCH);
+            uint8_t s_retval;
+            SPI_master_rx(&s_retval);
+            if(s_retval != STOP) USART_tx(FAILURE);
+            else USART_tx(SUCCESS);
+        
         }
-        if(flag == 0x80) {
-            flag = 0x00;
-            USART_tx(STOP);
-        }
+        PORTC |= 0x02;
     }
     else if(data == START) {
         flag = 0x80;
@@ -236,6 +244,11 @@ ISR(USART_RX_vect) {
 
 // May not be used at all
 ISR(USART_TX_vect) {
+    if(flag == 0x80) {
+        flag = 0x00;
+        USART_tx(STOP);
+    }
 }
+// May not be used at all
 ISR(SPI_STC_vect) {
 }

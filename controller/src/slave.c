@@ -323,18 +323,19 @@ void SPI_slave_init(void) {
 }
 
 void SPI_slave_tx(uint8_t data) {
-    UDR0 = data;
+    SPDR = data;
 }
 
 void SPI_slave_rx(uint8_t* data) {
-    *data = UDR0;
+    *data = SPDR;
 }
 
 void set_frequency(uint8_t data) {
     
     uint16_t offset = data * 4;
-    uint32_t freq =  eeprom_read_dword((const uint32_t *)offset);
-    freq = 0;
+    uint32_t freq =  eeprom_read_dword((const uint32_t *)0);
+    //uint32_t freq =  eeprom_read_dword((const uint32_t *)offset);
+    //freq = 0;
     PORTD |= 0x01;
     PORTD &= 0xFE;
 }
@@ -393,12 +394,12 @@ ISR(SPI_STC_vect) {
         // Discard this byte since this
         // was used to tranfer values from
         // the slave to master
-        if ((flag & 0x0F) == 0x04) {
+        if ((flag & 0x0F) == 0x05) flag--;
+        else if((flag & 0x0F) == 0x04) {
+            set_frequency(data);
             flag--;
-            return;
         }
         else if((flag & 0x0F) == 0x03) {
-            set_frequency(data);
             flag--;
         }
         else if((flag & 0x0F) == 0x02) {
@@ -406,10 +407,12 @@ ISR(SPI_STC_vect) {
         }
         else if((flag & 0x0F) == 0x01) {
             flag--;
+            SPI_slave_tx(STOP);
         }
+        // Reset the state back
         else if((flag & 0x0F) == 0x00) {
             flag = 0x00;
-        } 
+        }
     }
     else if(data == START) {
         flag = 0x80;
