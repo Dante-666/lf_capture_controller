@@ -9,6 +9,10 @@
 #define __AVR_ATmega328P__ 
 #endif
 
+#define F_CPU 20000000UL
+
+#include <avr/delay.h>
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/eeprom.h>
@@ -19,12 +23,11 @@
 #define BACKWARD    7
 #define MOTORFREE   11
 
-#define START       17
+#define START       13
+#define LOAD        17
 #define SUCCESS     19
 #define FAILURE     23
 #define STOP        29
-
-#define FETCH       31
 
 // Writing these in reverse order ensures that
 // the lowest frequency is stored in the lowest
@@ -287,28 +290,41 @@ uint32_t EEMEM F2 = 11537;
 uint32_t EEMEM F1 = 10737;
 
 register uint8_t flag asm("r2");
-register uint8_t buff asm("r3");
+register uint8_t slave_flag asm("r3");
+
+uint16_t control = 0x0000;
+uint16_t freql = 0x0000;
+uint16_t freqh = 0x0000;
+
+uint8_t frequency = 0x00;
+uint8_t motorl0 = 0x00;
+uint8_t motorl1 = 0x00;
+uint8_t motorh = 0x00;
 
 void TIMER_init(void) {
+    TCCR1B |= 1<<ICNC1 | 1<<ICES1 | 1<<CS10; // No prescaling
+}
+
+void TIMER_start(void) {
     cli();
-    TCCR1B |= 1<<CS11 | 1<<CS10; // Prescaler by 1024 
-    ICR1 = 15624; // 16000000/1024 -1, clock starts with 0 in uC, count till 1 second
-    TCCR1B |= 1<<WGM12; // Set CTC mode
-    TIMSK1 |= 1<<ICIE1; // Enable interrupt on match
+    TIMSK1 |= 1<<ICIE1;
+    sei();
+}
+
+void TIMER_stop(void) {
+    cli();
+    TIMSK1 &= ~(1<<ICIE1);
     sei();
 }
 
 void USARTSPI_init(void) {
-    cli();
-    // Clock freq. is 1 Mhz
-    // TODO: Change this for 20 MHz
-    // Baud rate is 1/16(1+12) Mbps = 4800 bps
-    // UBRR = 0x00C;
-    UBRR0L = 0x0C;
+    // Clock freq. is 20 Mhz
+    // Baud rate is 20/16(1+4) Mbps = 250 kbps
+    // UBRR = 0x004;
+    UBRR0L = 0x04;
     // Enable transmitter only
     UCSR0B = 1<<TXEN0 | 1<<TXCIE0 ;
-    UCSR0C = 1<<UMSEL01 | 1<<UMSEL00;
-    sei();
+    UCSR0C = 1<<UMSEL01 | 1<<UMSEL00 | 1<<UCPOL0;
 }
 
 void USARTSPI_tx(uint8_t data) {
@@ -316,10 +332,8 @@ void USARTSPI_tx(uint8_t data) {
 }
 
 void SPI_slave_init(void) {
-    cli();
     DDRB = 1<<DDB4;
     SPCR = 1<<SPIE | 1 <<SPE | 1<<SPR0;
-    sei();
 }
 
 void SPI_slave_tx(uint8_t data) {
@@ -330,92 +344,202 @@ void SPI_slave_rx(uint8_t* data) {
     *data = SPDR;
 }
 
-void set_frequency(uint8_t data) {
-    
-    uint16_t offset = data * 4;
-    uint32_t freq =  eeprom_read_dword((const uint32_t *)0);
-    //uint32_t freq =  eeprom_read_dword((const uint32_t *)offset);
-    //freq = 0;
-    PORTD |= 0x01;
-    PORTD &= 0xFE;
+void blink_led() {
+    PORTD |= 1<<PORTD5;
+    _delay_ms(1);
+    PORTD &= ~(1<<PORTD5);
+}
+
+void setup() {
+    slave_flag = 0x84;
+
+    uint16_t offset = frequency * 4;
+
+    freql = eeprom_read_word((const uint16_t *) offset);
+    freqh = eeprom_read_word((const uint16_t *) offset+2);
+
+    USARTSPI_tx(0x00);
+
+}
+
+void start_motor(void) {
+    slave_flag = 0x42;
+    control = 0x2068;
+
+    TIMER_start();
+
+    USARTSPI_tx(0x00);
+
+}
+
+void stop_motor(void) {
+    slave_flag = 0x42;
+    control = 0x2148;
+
+    TIMER_stop();
+
+    USARTSPI_tx(0x00);
 }
 
 int main(void) {
 
+    cli();
     USARTSPI_init();
     SPI_slave_init();
+
+    flag = 0x00;
+
+    //TODO: Set output status LEDs for showing what's going on
 
     // Disable modules that are not being used
     wdt_disable();
     power_timer0_disable();
-    // TODO: enable this to implement the
-    // counting operation
-    power_timer1_disable();
     power_timer2_disable();
     power_twi_disable();
     power_adc_disable();
     
     // Set all unused pins as pulled-up inputs
-    DDRD &= 0x1F;
-    PORTD |= 0xE1;
+    PORTB |= 1<<PORTB7 | 1<<PORTB6 | 1<<PORTB5 |
+             1<<PORTB3 | 1<<PORTB2 | 1<<PORTB1 | 1<<PORTB0;
 
-    // TODO: Check for reset situation once
-    // and verify if the reset pin has no effect
-    DDRC &= 0x00;
-    PORTC |= 0xFF;
+    // These ports are not used at all
+    DDRC &= ~(1<<DDC6 | 1<<DDC5 | 1<<DDC4 |
+             1<<DDC3 | 1<<DDC2 | 1<<DDC1 | 1<<DDC0);
+    PORTC |= 1<<PORTC6 | 1<<PORTC5 | 1<<PORTC4 | 
+             1<<PORTC3 | 1<<PORTC2 | 1<<PORTC1 | 1<<PORTC0;
 
-    // Data direction has already been set in
-    // SPI_master_init()
-    PORTB |= 0x2F;
+    // Some bits are being set by the USART in master
+    // SPI mode
+    //TODO: Make PORTD5 as input again
+    DDRD |= 1<<PORTD5 |
+            1<<PORTD3 | 1<<PORTD2 | 1<<PORTD0;
+    PORTD |= 1<<PORTD7 | 1<<PORTD6 | // 1<<PORTD5 | 
+             1<<PORTD0;
+    PORTD &= ~(1<<PORTD5);
+
+    sei();
+
+    stop_motor();
     
     while(1) {}
 }
 
-//TODO: count the input pulses as they arrive.
-/*ISR(TIMER1_COMPA_vect) {
-    glow_led(link);
-    link += 1;    
-}*/
+ISR(TIMER1_CAPT_vect) {
+
+    blink_led();
+
+    if(motorl0) {
+        motorl0--;
+    } else {
+
+        if(motorl1) {
+            motorl1--;
+            motorl0 = 0xFF;
+        } else {
+            
+           if(motorh) {
+               motorh--;
+               motorl1 = 0xFA;
+           } else {
+                TIMER_stop();
+                stop_motor();
+           }
+        }
+
+    }
+}
+
+ISR(USART_TX_vect) {
+    uint8_t s_data;
+
+    blink_led();
+
+    if(flag & 0x80) {
+        if((flag & 0x0F) == 4) {
+            PORTD &= ~(1<<PORTD0);
+            s_data = freql>>8 & 0xFF;
+            USARTSPI_tx(s_data);
+            flag--;            
+        } else if ((flag & 0x0F) == 3) {
+            s_data = freql & 0xFF;
+            USARTSPI_tx(s_data);
+            flag--;
+        } else if ((flag & 0x0F) == 2) {
+            s_data = freqh>>8 & 0xFF;
+            USARTSPI_tx(s_data);
+            flag--;
+        } else if ((flag & 0x0F) == 1) {
+            s_data = freqh & 0xFF;
+            USARTSPI_tx(s_data);
+            flag--;
+        } else if ((flag & 0x0F) == 0) {
+            PORTD |= 1<<PORTD0;
+            //if(flag & 0x40)
+            //    flag = 0x42;
+            //else
+            flag = 0x00;
+        }
+    }
+    else if(flag & 0x40) {
+        if((flag & 0x0F) == 2) {
+            PORTD &= ~(1<<PORTD0);
+            s_data = control>>8 & 0xFF;
+            USARTSPI_tx(s_data);
+            flag--;
+        } else if((flag & 0x0F) == 1) {
+            s_data = control & 0xFF;
+            USARTSPI_tx(s_data);
+            flag--;
+        } else if((flag & 0x00) == 0) {
+            PORTD |= 1<<PORTD0;
+            flag = 0x00;
+        }
+    }
+
+}
 
 ISR(SPI_STC_vect) {
     uint8_t data;
     SPI_slave_rx(&data);
 
-    if(flag == 0x80) {
-        if(data == BACKWARD)
-            PORTD |= 0x04;
-        else if(data == FORWARD)
-            PORTD &= 0xFB;
-        flag = 0x10;
-        flag += 5;
-        SPI_slave_tx(SUCCESS);
-    }
-    else if (flag & 0x10) {
-        // Discard this byte since this
-        // was used to tranfer values from
-        // the slave to master
-        if ((flag & 0x0F) == 0x05) flag--;
-        else if((flag & 0x0F) == 0x04) {
-            set_frequency(data);
+    if(flag & 0x80) {
+
+        if((flag & 0x0F) == 5) {
+            if(data == BACKWARD)
+                PORTD |= 0x04;
+            else if(data == FORWARD)
+                PORTD &= 0xFB;
             flag--;
         }
-        else if((flag & 0x0F) == 0x03) {
+        else if((flag & 0x0F) == 4) {
+            frequency = data;
             flag--;
         }
-        else if((flag & 0x0F) == 0x02) {
+        else if((flag & 0x0F) == 3) {
+            motorl0 = data;
             flag--;
         }
-        else if((flag & 0x0F) == 0x01) {
-            flag--;
-            SPI_slave_tx(STOP);
+        else if((flag & 0x0F) == 2) {
+            motorl1 = data;
+            flag--; 
+            SPI_slave_tx(SUCCESS);
         }
-        // Reset the state back
-        else if((flag & 0x0F) == 0x00) {
+        else if((flag & 0x0F) == 1) {
+            motorh = data;
             flag = 0x00;
+            setup();
         }
+    }
+    else if(data == STOP) {
+        stop_motor();
     }
     else if(data == START) {
+        blink_led();
+        start_motor();
+    }
+    else if(data == LOAD) {
         flag = 0x80;
+        flag += 5;
     }
 }
 

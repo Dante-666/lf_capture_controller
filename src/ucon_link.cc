@@ -135,43 +135,44 @@ void UConLink::writeWord(uint8_t* word, uint8_t length) {
     write(this->fd, word, length);
 }
 
-void UConLink::move(uint8_t moveit, double length, uint16_t dummy) {
+void UConLink::start() {
+    
+    _logger->trace("Commencing the drive operation.");
 
-    _logger->trace("Driving {0:b} for length : {1}", moveit, length);
+    // TODO: Make this to be blocking operation and make the
+    // thread wait for this to complete
+    this->writeByte(START);
+
+}
+
+void UConLink::stop() {
+    
+    _logger->trace("Stopping all motors");
+    this->writeByte(STOP);
+}
+
+void UConLink::load(uint8_t moveit, double length) {
+
+    _logger->trace("Loading {0:b} for length : {1}", moveit, length);
     
     uint8_t retval;
-    // First set the motor direction and which ones to move
-    this->writeByte(START);
-    this->writeByte(moveit);
-    this->readByte(&retval);
+    uint8_t* command = (uint8_t *) malloc(6);
 
-    if(retval != SUCCESS) {
-        if((retval & FAILURE) == FAILURE)
-            _logger->error("There was some error with the slave units...");
-        if(retval & 0x80)
-            _logger->error("Motor X controller is not responding...");
-        else if(retval & 0x40)
-            _logger->error("Motor Y controller is not responding...");
-        else if(retval & 0x20)
-            _logger->error("Motor Z controller is not responding...");
-        else
-            _logger->error("Main controller is not responding...");
-        //TODO: do error handling here later.
-        this->~UConLink();
-        exit(-1);
-    }
-    
-    uint8_t* command = (uint8_t *) malloc(4);
-
-    //TODO: do the trajectory computations here.
+    // TODO: do complex control in the uController itself.
+    // There is a lot of memory space available over there
 
     if(moveit & X_F) {
-        command[0] = dummy;    //Freq
-        command[1] = dummy;    //no. of 10 rotations
-        command[2] = dummy & 0xFF;
-        command[3] = dummy >> 8;
-        //this->writeByte(XON);
-        this->writeWord(command, 4);
+        command[0] = LOAD;
+        if(moveit & (X_B ^ X_F))
+            command[1] = X_B;
+        else
+            command[1] = X_F;
+        command[2] = 0x10;    //Freq
+        command[3] = 0;    //low count
+        command[4] = 250;  //high count
+        command[5] = 0;    //no. of 10 rotations
+        
+        this->writeWord(command, 6);
         this->readByte(&retval);
         
         if(retval != SUCCESS) {
@@ -184,12 +185,17 @@ void UConLink::move(uint8_t moveit, double length, uint16_t dummy) {
     }
 
     if(moveit & Y_F) {
-        command[0] = dummy;    //Freq
-        command[1] = dummy;    //no. of 10 rotations
-        command[2] = dummy & 0xFF;
-        command[3] = dummy >> 8;
-        //this->writeByte(XON);
-        this->writeWord(command, 4);
+        command[0] = LOAD;
+        if(moveit & (Y_B ^ Y_F))
+            command[1] = Y_B;
+        else
+            command[1] = Y_F;
+        command[2] = 0x10;    //Freq
+        command[3] = 0;    //no. of 10 rotations
+        command[4] = 250;
+        command[5] = 0;
+        
+        this->writeWord(command, 6);
         this->readByte(&retval);
         
         if(retval != SUCCESS) {
@@ -202,12 +208,17 @@ void UConLink::move(uint8_t moveit, double length, uint16_t dummy) {
     }
     
     if(moveit & Z_F) {
-        command[0] = dummy;    //Freq
-        command[1] = dummy;    //no. of 10 rotations
-        command[2] = dummy & 0xFF;
-        command[3] = dummy >> 8;
-        //this->writeByte(XON);
-        this->writeWord(command, 4);
+        command[0] = LOAD;
+        if(moveit & (Z_B ^ Z_F))
+            command[1] = Z_B;
+        else
+            command[1] = Z_F;
+        command[2] = 0x10;    //Freq
+        command[3] = 0;    //no. of 10 rotations
+        command[4] = 250;
+        command[5] = 0;
+        
+        this->writeWord(command, 6);
         this->readByte(&retval);
         
         if(retval != SUCCESS) {
@@ -217,13 +228,6 @@ void UConLink::move(uint8_t moveit, double length, uint16_t dummy) {
             this->~UConLink();
             exit(-1);
         }
-    }
-
-    this->readByte(&retval);
-    if(retval != STOP) {
-        _logger->error("Main controller is not responding...");
-        this->~UConLink();
-        exit(-1);
     }
 
     free(command);

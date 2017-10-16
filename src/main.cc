@@ -45,29 +45,13 @@ int main() {
     grabber.grab_image(image);*/
     
     signal(SIGINT, signal_hd);
-    UConLink link("/dev/ttyUSB0", B4800, "8E2");
+    UConLink link("/dev/ttyUSB0", B500000, "8E2");
     uint32_t cap = 0;
-    uint8_t retval;
-    int i = 0;
 
     while(run) {
         printf("Waiting for key input...\n");
         scanf("%x", &cap);
-        //link.move(moveit, 1.0, cap);
         link.writeByte(cap & 0xFF);
-        if(i++ == 2) {
-            i = 0;
-            usleep(100000);
-            link.readByte(&retval);
-            //printf("Retval : %x/n", retval);
-            link.readByte(&retval);
-            //printf("Retval : %x/n", retval);
-            link.readByte(&retval);
-            //printf("Retval : %x/n", retval);
-            link.readByte(&retval);
-            link.readByte(&retval);
-            //printf("Retval : %x/n", retval);
-        }
     }
 
     /*irr::IrrlichtDevice *device;

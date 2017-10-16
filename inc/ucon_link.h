@@ -34,7 +34,8 @@
 #include <errno.h>   /* ERROR Number Definitions           */
 #include <spdlog/spdlog.h>
 
-#define START       17
+#define START       13
+#define LOAD        17
 #define SUCCESS     19
 #define FAILURE     23
 #define STOP        29
@@ -59,7 +60,9 @@ class UConLink {
         // TODO: Must be built with exception handling
         // to avoid overrunning the motor positions
         // remove the dummy part later.
-        void move(uint8_t moveit, double length, uint16_t dummy);
+        void load(uint8_t moveit, double length);
+        void start();
+        void stop();
     private:
         int fd;
         std::shared_ptr<spdlog::logger> _logger;
