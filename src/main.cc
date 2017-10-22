@@ -45,13 +45,64 @@ int main() {
     grabber.grab_image(image);*/
     
     signal(SIGINT, signal_hd);
-    UConLink link("/dev/ttyUSB0", B500000, "8E2");
+    UConLink link("/dev/ttyUSB0", B4800, "8E2");
     uint32_t cap = 0;
+    uint8_t retval;
 
+    link.readByte(&retval);
     while(run) {
-        printf("Waiting for key input...\n");
-        scanf("%x", &cap);
-        link.writeByte(cap & 0xFF);
+        /*printf("CONTROL");
+        scanf("%d", &cap);
+        link.writeByte(cap & 0xFF);*/
+        printf("Enter the type of control\n" 
+               " 1. LOAD\n"
+               " 2. START\n"
+               " 3. STOP\n");
+        scanf("%d", &cap);
+
+        if(cap == 1) {
+            printf("Enter moveit command(HEX)...\n");
+            uint8_t moveit;
+            scanf("%x", &cap);
+            moveit = cap & 0xFF;
+
+            printf("Enter speed_x (HEX)...\n");
+            uint8_t speed_x;
+            scanf("%x", &cap);
+            speed_x = cap & 0xFF;
+
+            printf("Enter speed_y (HEX)...\n");
+            uint8_t speed_y;
+            scanf("%x", &cap);
+            speed_y = cap & 0xFF;
+            
+            printf("Enter speed_z (HEX)...\n");
+            uint8_t speed_z;
+            scanf("%x", &cap);
+            speed_z = cap & 0xFF;
+            
+            printf("Enter x length (DEC)...\n");
+            uint32_t len_x;
+            scanf("%d", &cap);
+            len_x = cap;
+
+            printf("Enter y length (DEC)...\n");
+            uint32_t len_y;
+            scanf("%d", &cap);
+            len_y = cap;
+
+            printf("Enter z length (DEC)...\n");
+            uint32_t len_z;
+            scanf("%d", &cap);
+            len_z = cap;
+
+            link.load(moveit, speed_x, speed_y, speed_z, len_x, len_y, len_z);
+
+        } else if(cap == 2) {
+            link.start();
+        } else if(cap == 3) {
+            link.stop();
+        }
     }
 
     /*irr::IrrlichtDevice *device;

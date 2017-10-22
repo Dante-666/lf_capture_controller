@@ -39,13 +39,18 @@
 #define SUCCESS     19
 #define FAILURE     23
 #define STOP        29
+#define MOTOR        31
 
 #define X_F         0x01
 #define Y_F         0x04
 #define Z_F         0x10
-#define X_B         0x03
-#define Y_B         0x0C
-#define Z_B         0x30
+#define X_B         0x02
+#define Y_B         0x08
+#define Z_B         0x20
+
+#define MAX_LEN_X   64000
+#define MAX_LEN_Y   64000
+#define MAX_LEN_Z   64000
 
 class UConLink {
     public:
@@ -60,7 +65,16 @@ class UConLink {
         // TODO: Must be built with exception handling
         // to avoid overrunning the motor positions
         // remove the dummy part later.
-        void load(uint8_t moveit, double length);
+        // TODO: Better idea to make it blocking so that
+        // error values can be transmitted.
+        // TODO: Check for the minimum value of lengths for motion
+        void load(uint8_t moveit,
+                  uint8_t speed_x,
+                  uint8_t speed_y,
+                  uint8_t speed_z,
+                  uint32_t len_x = 0, 
+                  uint32_t len_y = 0, 
+                  uint32_t len_z = 0);
         void start();
         void stop();
     private:

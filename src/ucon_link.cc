@@ -113,12 +113,14 @@ UConLink::~UConLink() {
 
 void UConLink::readByte(uint8_t* data) {
     this->readWord(data, 1);
-
-    _logger->trace("Data read : {0:x}", *data);
 }
 
-void UConLink::readWord(uint8_t* data, uint8_t length) {
-    read(this->fd, data, length);
+void UConLink::readWord(uint8_t* word, uint8_t length) {
+    read(this->fd, word, length);
+    
+    for(int i = 0; i< length; i++)
+        _logger->trace("Data read : {0:x}", word[i]);
+
 }
 
 void UConLink::writeByte(uint8_t data) {
@@ -130,104 +132,85 @@ void UConLink::writeByte(uint8_t data) {
 
 void UConLink::writeWord(uint8_t* word, uint8_t length) {
 
-    _logger->trace("Data written : {0:x}", word);
+    for(int i = 0; i< length; i++)
+        _logger->trace("Data written : {0:x}", word[i]);
 
     write(this->fd, word, length);
 }
 
 void UConLink::start() {
     
-    _logger->trace("Commencing the drive operation.");
+    _logger->trace("Starting all the loaded motors.");
 
-    // TODO: Make this to be blocking operation and make the
-    // thread wait for this to complete
+    uint8_t retval;
+    
     this->writeByte(START);
-
+    usleep(50000);
+    this->readByte(&retval);
+    
+    if(retval != SUCCESS) {
+        _logger->error("Main controller is not responding...");
+            //TODO: do error handling here later.
+            //this->~UConLink();
+            //exit(-1);
+    }
 }
 
 void UConLink::stop() {
     
-    _logger->trace("Stopping all motors");
+    _logger->trace("Stopping all the loaded motors.");
+
+    uint8_t retval;
+    
     this->writeByte(STOP);
+    usleep(50000);
+    this->readByte(&retval);
+    
+    if(retval != SUCCESS) {
+        _logger->error("Main controller is not responding...");
+            //TODO: do error handling here later.
+            //this->~UConLink();
+            //exit(-1);
+    }
 }
 
-void UConLink::load(uint8_t moveit, double length) {
+void UConLink::load(uint8_t moveit,
+                    uint8_t speed_x, uint8_t speed_y, uint8_t speed_z,
+                    uint32_t len_x, uint32_t len_y, uint32_t len_z) {
 
-    _logger->trace("Loading {0:b} for length : {1}", moveit, length);
+    _logger->trace("Loading motors {0:b} for lengths : {1}, {2}, {3}", moveit, len_x, len_y, len_z);
     
     uint8_t retval;
-    uint8_t* command = (uint8_t *) malloc(6);
+    uint8_t* command = (uint8_t *) malloc(14);
 
-    // TODO: do complex control in the uController itself.
-    // There is a lot of memory space available over there
-
-    if(moveit & X_F) {
-        command[0] = LOAD;
-        if(moveit & (X_B ^ X_F))
-            command[1] = X_B;
-        else
-            command[1] = X_F;
-        command[2] = 0x10;    //Freq
-        command[3] = 0;    //low count
-        command[4] = 250;  //high count
-        command[5] = 0;    //no. of 10 rotations
-        
-        this->writeWord(command, 6);
-        this->readByte(&retval);
-        
-        if(retval != SUCCESS) {
-            if(retval == FAILURE) _logger->error("Motor X controller is not responding...");
-            else _logger->error("Main controller is not responding...");
-            //TODO: do error handling here later.
-            this->~UConLink();
-            exit(-1);
-        }
-    }
-
-    if(moveit & Y_F) {
-        command[0] = LOAD;
-        if(moveit & (Y_B ^ Y_F))
-            command[1] = Y_B;
-        else
-            command[1] = Y_F;
-        command[2] = 0x10;    //Freq
-        command[3] = 0;    //no. of 10 rotations
-        command[4] = 250;
-        command[5] = 0;
-        
-        this->writeWord(command, 6);
-        this->readByte(&retval);
-        
-        if(retval != SUCCESS) {
-            if(retval == FAILURE) _logger->error("Motor Y controller is not responding...");
-            else _logger->error("Main controller is not responding...");
-            //TODO: do error handling here later.
-            this->~UConLink();
-            exit(-1);
-        }
-    }
+    command[0] = LOAD;
+    command[1] = moveit;
     
-    if(moveit & Z_F) {
-        command[0] = LOAD;
-        if(moveit & (Z_B ^ Z_F))
-            command[1] = Z_B;
-        else
-            command[1] = Z_F;
-        command[2] = 0x10;    //Freq
-        command[3] = 0;    //no. of 10 rotations
-        command[4] = 250;
-        command[5] = 0;
-        
-        this->writeWord(command, 6);
-        this->readByte(&retval);
-        
-        if(retval != SUCCESS) {
-            if(retval == FAILURE) _logger->error("Motor Z controller is not responding...");
-            else _logger->error("Main controller is not responding...");
+    command[2] = speed_x;
+    command[3] = speed_y;
+    command[4] = speed_z;
+    
+    command[5] = len_x & 0xFF;
+    command[6] = (len_x >> 8) & 0xFF;
+    command[7] = (len_x >> 16) & 0xFF;
+    
+    command[8] = len_y & 0xFF;
+    command[9] = (len_y >> 8) & 0xFF;
+    command[10] = (len_y >> 16) & 0xFF;
+    
+    command[11] = len_z & 0xFF;
+    command[12] = (len_z >> 8) & 0xFF;
+    command[13] = (len_z >> 16) & 0xFF;
+
+    this->writeWord(command, 14);
+    usleep(50000);
+    this->readByte(&retval);
+
+    if(retval != SUCCESS) {
+        _logger->error("Main controller is not responding...");
             //TODO: do error handling here later.
-            this->~UConLink();
-            exit(-1);
-        }
+            //this->~UConLink();
+            //exit(-1);
     }
 
     free(command);

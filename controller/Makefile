@@ -14,12 +14,8 @@ SRCEXT := c
 CFLAGS := -O$(OPT) -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums \
 		  -Wall -Wstrict-prototypes -mmcu=$(MCU) -D__TWEAK__ 
 
-all: $(BUILDDIR)/master.hex $(BUILDDIR)/slave.hex \
-	 $(BUILDDIR)/master.eep $(BUILDDIR)/slave.eep \
-	 $(BUILDDIR)/master.lss $(BUILDDIR)/slave.lss \
-	 $(BUILDDIR)/master.sym $(BUILDDIR)/slave.sym \
-	 $(BUILDDIR)/master.elf $(BUILDDIR)/slave.elf \
-	 $(BUILDDIR)/master.o $(BUILDDIR)/slave.o 
+all: $(BUILDDIR)/controller.hex $(BUILDDIR)/controller.eep $(BUILDDIR)/controller.lss \
+	 $(BUILDDIR)/controller.sym $(BUILDDIR)/controller.elf $(BUILDDIR)/controller.o  
 
 $(BUILDDIR)/%.hex: $(BUILDDIR)/%.elf
 	@echo
