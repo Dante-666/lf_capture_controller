@@ -28,5 +28,6 @@
 
 #include <irrlicht/irrlicht.h>
 #include <CEGUI/CEGUI.h>
+#include <CEGUI/RendererModules/Irrlicht/Renderer.h>
 
 #endif //__GUI_H_

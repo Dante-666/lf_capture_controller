@@ -43,3 +43,6 @@ thesis
 
 # vim Swap files
 *.swp
+
+# log files
+*.log
