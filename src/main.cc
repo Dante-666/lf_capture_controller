@@ -145,11 +145,40 @@ int main() {
 
     smgr = device->getSceneManager();
 
+    /*_logger->trace("Adding keymap...");
+    irr::SKeyMap keyMap[8];
+    keyMap[0].Action = irr::EKA_MOVE_FORWARD;
+    keyMap[0].KeyCode = irr::KEY_UP;
+    keyMap[1].Action = irr::EKA_MOVE_FORWARD;
+    keyMap[1].KeyCode = irr::KEY_KEY_W;
+
+    keyMap[2].Action = irr::EKA_MOVE_BACKWARD;
+    keyMap[2].KeyCode = irr::KEY_DOWN;
+    keyMap[3].Action = irr::EKA_MOVE_BACKWARD;
+    keyMap[3].KeyCode = irr::KEY_KEY_S;
+    
+    keyMap[4].Action = irr::EKA_STRAFE_LEFT;
+    keyMap[4].KeyCode = irr::KEY_LEFT;
+    keyMap[5].Action = irr::EKA_STRAFE_LEFT;
+    keyMap[5].KeyCode = irr::KEY_KEY_A;
+    
+    keyMap[6].Action = irr::EKA_STRAFE_RIGHT;
+    keyMap[6].KeyCode = irr::KEY_RIGHT;
+    keyMap[7].Action = irr::EKA_STRAFE_RIGHT;
+    keyMap[7].KeyCode = irr::KEY_KEY_D;
+    
     _logger->trace("Adding camera and light node...");
-    cam = smgr->addCameraSceneNode(smgr->getRootSceneNode(),
-                                   irr::core::vector3df(4, 25, 4),
-                                   irr::core::vector3df(0, 0, 0),
-                                   1, true);
+    cam = smgr->addCameraSceneNodeFPS(smgr->getRootSceneNode(),
+                                      10.f,
+                                      .1f,
+                                      0,
+                                      keyMap,
+                                      8,
+                                      false,
+                                      0.f,
+                                      false,
+                                      true);*/
+    cam = smgr->addCameraSceneNodeMaya(smgr->getRootSceneNode());
     cam->setFOV(2.0f);
     light = smgr->addLightSceneNode();
     //light->setLightType(irr::video::ELT_DIRECTIONAL);
@@ -162,10 +191,10 @@ int main() {
     cam->setTarget(irr::core::vector3df(4, 45, 0));
 
 
-    irr::scene::IAnimatedMesh* test_2 = smgr->getMesh("data/meshes/cube.obj");
+    //irr::scene::IAnimatedMesh* test_2 = smgr->getMesh("data/meshes/cube.obj");
     //irr::scene::ISceneNode* tnode_2 = smgr->addAnimatedMeshSceneNode(test_2);
-    irr::scene::ISceneNode* tnode_3 = smgr->addAnimatedMeshSceneNode(test_2);
-    tnode_3->setPosition(irr::core::vector3df(0, 0, 10));
+    //irr::scene::ISceneNode* tnode_3 = smgr->addAnimatedMeshSceneNode(test_2);
+    //tnode_3->setPosition(irr::core::vector3df(0, 0, 10));
 
     irr::scene::IAnimatedMesh* test_3 = smgr->getMesh("data/meshes/base.3ds");
     irr::scene::ISceneNode *tnode_4 = smgr->addAnimatedMeshSceneNode(test_3);
