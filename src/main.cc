@@ -57,7 +57,8 @@ int main() {
         printf("Enter the type of control\n" 
                " 1. LOAD\n"
                " 2. START\n"
-               " 3. STOP\n");
+               " 3. STOP\n"
+               " 4. SCAN\n");
         scanf("%d", &cap);
 
         if(cap == 1) {
@@ -102,6 +103,10 @@ int main() {
             link.start();
         } else if(cap == 3) {
             link.stop();
+        } else if(cap == 4) {
+            uint8_t data;
+            link.readByte(&data);
+            printf("Data Read : %x\n", data);
         }
     }
 

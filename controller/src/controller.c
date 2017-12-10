@@ -302,7 +302,7 @@ uint32_t EEMEM F2 = 11537;
 uint32_t EEMEM F1 = 10737;
 
 register uint8_t flag asm("r2");
-//register uint8_t slave_flag asm("r3");
+register uint8_t es_flag asm("r3");
 
 register uint8_t countl0_x asm("r4");
 register uint8_t countl0_y asm("r5");
@@ -350,7 +350,7 @@ void USART_rx(uint8_t* data) {
 }
 
 void SPI_master_init(void) {
-    DDRB = 1<<DDB5 | 1<<DDB3 | 1<<DDB2; 
+    DDRB = 1<<DDB5 | 1<<DDB3 | 1<<DDB2;
     // SCK is at 5MHz, TCK = 0.2us, and SPI_DELAY
     // can be easily set to 2 us considering it takes
     // 8 clock cycles to transmit 1 byte with extra 2 cycles
@@ -359,6 +359,33 @@ void SPI_master_init(void) {
 
 void SPI_master_tx(uint8_t data) {
     SPDR = data;
+}
+
+void TIMER_init(void) {
+    TCCR1B |= 1<<CS12 | 1<<CS10;
+    OCR1A = 4882;
+    TCCR1B |= 1<<WGM12;
+}
+
+void TIMER_enable(void) {
+    TIMSK1 |= 1<<OCIE1A; 
+}
+
+void TIMER_disable(void) {
+    TIMSK1 &= ~(1<<OCIE1A);
+}
+
+void ENDSTOP_enable(void) {
+    EIMSK = 1<<INT1 | 1<<INT0;
+}
+
+void ENDSTOP_init(void) {
+    EICRA = 0x00;
+    ENDSTOP_enable();
+}
+
+void ENDSTOP_disable(void) {
+    EIMSK &= ~(1<<INT1 | 1<<INT0);
 }
 
 void PCINT_init(void) {
@@ -648,11 +675,12 @@ int main(void) {
     USART_init();
     SPI_master_init();
     PCINT_init();
+    TIMER_init();
+    ENDSTOP_init();
 
     // Disable modules that are not being used
     wdt_disable();
     power_timer0_disable();
-    power_timer1_disable();
     power_timer2_disable();
     power_twi_disable();
     power_adc_disable();
@@ -662,12 +690,12 @@ int main(void) {
     // 1 <- PCINT0 INT FG_X OUT
     // 2 -> FG_X FSYNC
     // 3 -> FG_SDATA
-    // 4 <- MULTIPLEX WITH ENDSTOP
+    // 4 <- Z_AXIS ENDSTOP
     // 5 -> FG_SCK
     // 6 // XTAL1
     // 7 // XTAL2
     DDRB |= 1<<DDB0;
-    PORTB |= 1<<PORTB1;
+    PORTB |= 1<<PORTB4 | 1<<PORTB1 | 1<<PORTB0;
     
     
     // PORTC : 
@@ -687,8 +715,8 @@ int main(void) {
     // 3 <- ENDSTOP INT1
     // 4 <- PCINT2 INT FG_Z OUT
     // 5 -> MUX SELECT
-    // 6 <- MULTIPLEX WITH ENDSTOP
-    // 7 <- MULTIPLEX WITH ENDSTOP
+    // 6 <- Y_AXIS ENDSTOP
+    // 7 <- X_AXIS ENDSTOP
     DDRD |= 1<<DDD5;
     PORTD |= 1<<PORTD7 | 1<<PORTD6 | 1<<PORTD4 |
              1<<PORTD3 | 1<<PORTD2;
@@ -703,6 +731,65 @@ int main(void) {
     temp = moveit;
 
     while(1) {}
+}
+
+ISR(INT0_vect, ISR_NAKED) {
+    __asm__(
+    "   push r24\n\t"
+    "   in r24, 0x3f\n\t"
+    "   push r24\n\t"
+    "   cli\n\t"
+    "   call 0x12e\n\t"
+    "   call 0x42e\n\t"
+    "   ldi r24, 0x40\n\t"
+    "   mov r2, r24\n\t"
+    "   cbi 0x0b, 5\n\t"
+    "   sbic 0x09, 7\n\t"
+    "   rjmp .+20\n\t"
+    "   ldi r24, 0x01\n\t"
+    "   sts 0x00C6, r24\n\t"
+    "   call 0x106\n\t"
+    "   sei\n\t"
+    "   pop r24\n\t"
+    "   out 0x3f, r24\n\t"
+    "   pop r24\n\t"
+    "   reti\n\t"
+    "   sbic 0x09, 6\n\t"
+    "   rjmp .+4\n\t"
+    "   ldi r24, 0x04\n\t"
+    "   rjmp .-26\n\t"
+    "   ldi r24, 0x10\n\t"
+    "   rjmp .-30\n\t");
+}
+
+ISR(INT1_vect, ISR_NAKED) {
+    __asm__(
+    "   sbi 0x0b, 5\n\t"
+    "   push r24\n\t"
+    "   in r24, 0x3f\n\t"
+    "   push r24\n\t"
+    "   cli\n\t"
+    "   call 0x12e\n\t"
+    "   call 0x42e\n\t"
+    "   ldi r24, 0x40\n\t"
+    "   mov r2, r24\n\t"
+    "   sbic 0x09, 7\n\t"
+    "   rjmp .+22\n\t"
+    "   ldi r24, 0x02\n\t"
+    "   sts 0x00C6, r24\n\t"
+    "   call 0x106\n\t"
+    "   cbi 0x0b, 5\n\t"
+    "   sei\n\t"
+    "   pop r24\n\t"
+    "   out 0x3f, r24\n\t"
+    "   pop r24\n\t"
+    "   reti\n\t"
+    "   sbic 0x09, 6\n\t"
+    "   rjmp .+4\n\t"
+    "   ldi r24, 0x08\n\t"
+    "   rjmp .-28\n\t"
+    "   ldi r24, 0x20\n\t"
+    "   rjmp .-32\n\t");
 }
 
 // This routine will not work if the counter
@@ -739,7 +826,7 @@ ISR(PCINT0_vect, ISR_NAKED) {
     "   dec r7\n\t"
     "   sts 0x010a, r7\n\t"
     "   rjmp .-48\n\t"
-    "   call 0x37a\n\t"
+    "   call 0x3c8\n\t"
     "   rjmp .-54\n\t");
 }
 
@@ -771,7 +858,7 @@ ISR(PCINT1_vect, ISR_NAKED) {
     "   dec r7\n\t"
     "   sts 0x0108, r7\n\t"
     "   rjmp .-48\n\t"
-    "   call 0x39c\n\t"
+    "   call 0x3ea\n\t"
     "   rjmp .-54\n\t");
 }
 
@@ -803,8 +890,27 @@ ISR(PCINT2_vect, ISR_NAKED) {
     "   dec r7\n\t"
     "   sts 0x0106, r7\n\t"
     "   rjmp .-48\n\t"
-    "   call 0x3be\n\t"
+    "   call 0x40c\n\t"
     "   rjmp .-54\n\t");
+}
+
+ISR(TIMER1_COMPA_vect, ISR_NAKED) {
+    __asm__(
+    "   push r24\n\t"
+    "   in r24, 0x3f\n\t"
+    "   push r24\n\t"
+    "   in r24, 0x05\n\t"
+    "   sbrs r24, 0\n\t"
+    "   rjmp .+4\n\t"
+    "   andi r24, 0xFE\n\t"
+    "   rjmp .+2\n\t"
+    "   ori r24, 0x01\n\t"
+    "   out 0x05, r24\n\t"
+    "   pop r24\n\t"
+    "   out 0x3f, r24\n\t"
+    "   pop r24\n\t"
+    "   reti \n\t");
+
 }
 
 ISR(USART_RX_vect) {
@@ -812,7 +918,17 @@ ISR(USART_RX_vect) {
     uint8_t data;
     USART_rx(&data);
 
-    if(flag & 0x80) {
+    if(flag & 0x40) {
+        if(data == STOP) {
+            ENDSTOP_enable();
+            TIMER_disable();
+            es_flag = 0x00;
+            flag = 0x00;
+            USART_tx(SUCCESS);
+            PORTB |= 1<<PORTB0;
+        }
+    }
+    else if(flag & 0x80) {
         if((flag & 0x0F) == 13) {
             moveit = data;
             flag--;
