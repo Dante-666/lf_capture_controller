@@ -32,6 +32,8 @@
 #include <termios.h> /* POSIX Terminal Control Definitions */
 #include <unistd.h>  /* UNIX Standard Definitions          */
 #include <errno.h>   /* ERROR Number Definitions           */
+
+#include <exception>
 #include <spdlog/spdlog.h>
 
 #define START       13
@@ -52,10 +54,26 @@
 #define MAX_LEN_Y   64000
 #define MAX_LEN_Z   64000
 
+namespace ucon_link {
+    struct serial_file_open : public std::exception {
+        const char* what() const throw () {
+            return "Unable to open the serial port successfully";
+        }
+    };
+
+    struct bad_setting : public std::exception {
+        const char* what() const throw () {
+            return "Something was wrong with the file opening settings";
+        }
+    };
+};
+
 class UConLink {
     public:
-        UConLink(const char* port, const int baud, const char* fmt);
+        UConLink(const char* port, const char* baud, const char* fmt) noexcept(false);
         ~UConLink();
+
+        static bool checkPort(const char* port);
         // TODO: Do IO error handling over here
         // Always allocate memory before sending it off here
         void writeByte(uint8_t data);
@@ -78,7 +96,7 @@ class UConLink {
         void start();
         void stop();
     private:
-        int fd;
+        int fd = 0;
         std::shared_ptr<spdlog::logger> _logger;
 };
 

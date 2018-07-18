@@ -31,23 +31,18 @@
 #include "ucon_link.h"
 #include "gui.h"
 
-//#define WITH_CEGUI
+#define IRR_ORIGIN      irr::core::vector3df(0, 0, 0)
+#define SHAFT_Y_OFFEST  irr::core::vector3df(0, 552.5, 0) 
+#define COUPLING_OFFSET irr::core::vector3df(-28.78, 85, 47)
+#define RAIL_OFFSET     irr::core::vector3df(0, 495, 0)
 
-#define IRR_ORIGIN irr::core::vector3df(0, 0, 0)
+#define LEFT_OFFSET     irr::core::vector3df(-28.78, 85, 47)
 
-bool run = true;
+#define RIGHT_OFFSET    irr::core::vector3df(0, 0, -1300)
+#define RIGHT_ROTATION  irr::core::vector3df(0, 180, 0)
 
-void signal_hd(int signum){
-    if(signum == SIGINT)
-        run = false;
-}
-
-void rotate_x(irr::scene::ISceneNode* node, float speed, float delta_t) {
-    float delta_rot = speed * delta_t * 180.0/M_PI;
-    irr::core::vector3df curr_rot = node->getRotation();
-    curr_rot += irr::core::vector3df(0, delta_rot, 0);
-    node->setRotation(curr_rot);
-} 
+#define HORIZ_OFFSET    irr::core::vector3df(0, 120, -126)
+#define HORIZ_ROTATION  irr::core::vector3df(90, 180, 0) 
 
 int main() {
 
@@ -119,180 +114,8 @@ int main() {
         }
     }*/
 
-    // Initializing logger
-    std::shared_ptr<spdlog::logger> _logger;
-    _logger = spdlog::stdout_color_mt("main");
-
-    _logger->set_level(spdlog::level::trace);
-
-    irr::IrrlichtDevice *device;
-    irr::video::IVideoDriver *driver;
-    irr::scene::ISceneManager *smgr;
-    irr::scene::ICameraSceneNode *cam;
-    irr::scene::ILightSceneNode *light;
-
-    _logger->trace("Creating Irrlicht device...");
-    device = irr::createDevice(irr::video::EDT_OPENGL, 
-                               irr::core::dimension2d<irr::u32>(800, 600),
-                               32, false, false, false, 0);
-    device->setWindowCaption(L"Cartesian Controller");
-
-    driver = device->getVideoDriver();
-    driver->setTextureCreationFlag(irr::video::ETCF_ALWAYS_32_BIT, true);
-    driver->setTextureCreationFlag(irr::video::ETCF_ALWAYS_16_BIT, false);
-    driver->setTextureCreationFlag(irr::video::ETCF_CREATE_MIP_MAPS, true);
-    driver->setAmbientLight(irr::video::SColor(255, 255, 255, 255));
-
-    smgr = device->getSceneManager();
-
-    /*_logger->trace("Adding keymap...");
-    irr::SKeyMap keyMap[8];
-    keyMap[0].Action = irr::EKA_MOVE_FORWARD;
-    keyMap[0].KeyCode = irr::KEY_UP;
-    keyMap[1].Action = irr::EKA_MOVE_FORWARD;
-    keyMap[1].KeyCode = irr::KEY_KEY_W;
-
-    keyMap[2].Action = irr::EKA_MOVE_BACKWARD;
-    keyMap[2].KeyCode = irr::KEY_DOWN;
-    keyMap[3].Action = irr::EKA_MOVE_BACKWARD;
-    keyMap[3].KeyCode = irr::KEY_KEY_S;
-    
-    keyMap[4].Action = irr::EKA_STRAFE_LEFT;
-    keyMap[4].KeyCode = irr::KEY_LEFT;
-    keyMap[5].Action = irr::EKA_STRAFE_LEFT;
-    keyMap[5].KeyCode = irr::KEY_KEY_A;
-    
-    keyMap[6].Action = irr::EKA_STRAFE_RIGHT;
-    keyMap[6].KeyCode = irr::KEY_RIGHT;
-    keyMap[7].Action = irr::EKA_STRAFE_RIGHT;
-    keyMap[7].KeyCode = irr::KEY_KEY_D;
-    
-    _logger->trace("Adding camera and light node...");
-    cam = smgr->addCameraSceneNodeFPS(smgr->getRootSceneNode(),
-                                      10.f,
-                                      .1f,
-                                      0,
-                                      keyMap,
-                                      8,
-                                      false,
-                                      0.f,
-                                      false,
-                                      true);*/
-    cam = smgr->addCameraSceneNodeMaya(smgr->getRootSceneNode());
-    cam->setFOV(2.0f);
-    light = smgr->addLightSceneNode();
-    //light->setLightType(irr::video::ELT_DIRECTIONAL);
-    light->setPosition(irr::core::vector3df(0, 10, 50));
-
-    _logger->trace("Adding meshes...");
-    irr::scene::IAnimatedMesh* test = smgr->getMesh("data/meshes/rotor_s.3ds");
-    irr::scene::ISceneNode* tnode = smgr->addAnimatedMeshSceneNode(test);
-    tnode->setScale(irr::core::vector3df(1.f, 1.f, 1.f));
-    cam->setTarget(irr::core::vector3df(4, 45, 0));
-
-
-    //irr::scene::IAnimatedMesh* test_2 = smgr->getMesh("data/meshes/cube.obj");
-    //irr::scene::ISceneNode* tnode_2 = smgr->addAnimatedMeshSceneNode(test_2);
-    //irr::scene::ISceneNode* tnode_3 = smgr->addAnimatedMeshSceneNode(test_2);
-    //tnode_3->setPosition(irr::core::vector3df(0, 0, 10));
-
-    irr::scene::IAnimatedMesh* test_3 = smgr->getMesh("data/meshes/base.3ds");
-    irr::scene::ISceneNode *tnode_4 = smgr->addAnimatedMeshSceneNode(test_3);
-    
-    irr::scene::IAnimatedMesh* test_4 = smgr->getMesh("data/meshes/rail_s.3ds");
-    irr::scene::ISceneNode *tnode_5 = smgr->addAnimatedMeshSceneNode(test_4);
-
-#ifdef WITH_CEGUI
-    _logger->trace("Bootstrapping the GUI system...");
-    CEGUI::IrrlichtRenderer& guiRend = CEGUI::IrrlichtRenderer::bootstrapSystem(*device);
-
-    _logger->trace("Adding GUI resources...");
-    CEGUI::DefaultResourceProvider* guiRP = static_cast<CEGUI::DefaultResourceProvider*>(CEGUI::System::getSingleton().getResourceProvider());
-    guiRP->setResourceGroupDirectory("schemes", "data/schemes");
-    guiRP->setResourceGroupDirectory("imagesets", "data/imagesets");
-    guiRP->setResourceGroupDirectory("fonts", "data/fonts");
-    guiRP->setResourceGroupDirectory("layouts", "data/layouts");
-    guiRP->setResourceGroupDirectory("looknfeel", "data/looknfeel");
-    guiRP->setResourceGroupDirectory("lua_scripts", "data/lua_scripts");
-    guiRP->setResourceGroupDirectory("schemas", "data/xml_schemas");
-    guiRP->setResourceGroupDirectory("animations", "data/animations");
-
-    CEGUI::ImageManager::setImagesetDefaultResourceGroup("imagesets");
-    CEGUI::Font::setDefaultResourceGroup("fonts");
-    CEGUI::Scheme::setDefaultResourceGroup("schemes");
-    CEGUI::WidgetLookManager::setDefaultResourceGroup("looknfeel");
-    CEGUI::WindowManager::setDefaultResourceGroup("layouts");
-    CEGUI::ScriptModule::setDefaultResourceGroup("lua_scripts");
-    CEGUI::AnimationManager::setDefaultResourceGroup("animations");
-
-    CEGUI::XMLParser* parser = CEGUI::System::getSingleton().getXMLParser();
-    if(parser->isPropertyPresent("SchemaDefaultResourceGroup"))
-        parser->setProperty("SchemaDefaultResourceGroup", "schemas");
-
-    CEGUI::SchemeManager::getSingleton().createFromFile("Generic.scheme");
-    CEGUI::SchemeManager::getSingleton().createFromFile("GameMenu.scheme");
-
-    _logger->trace("Adding a GUI windowManager...");
-    CEGUI::WindowManager& guiWmgr = CEGUI::WindowManager::getSingleton();
-    
-    CEGUI::Window* guiRoot = guiWmgr.loadLayoutFromFile("GameMenu.layout");
-    CEGUI::System::getSingleton().getDefaultGUIContext().setRootWindow(guiRoot);
-
-    CEGUI::AnimationManager& guiAnimgr = CEGUI::AnimationManager::getSingleton();
-    guiAnimgr.loadAnimationsFromXML("GameMenu.anims");
-
-    CEGUI::AnimationInstance* guiStartButtAnimInst = guiAnimgr.instantiateAnimation("StartButtonPulsating");
-    CEGUI::Window* guiStartButtWin = guiRoot->getChild("InnerPartContainer/InsideStartClickArea/StartButtonImage"); 
-    guiStartButtAnimInst->setTargetWindow(guiStartButtWin);
-    guiStartButtAnimInst->start();
-    
-    CEGUI::AnimationInstance* guiInsideImg1AnimInst = guiAnimgr.instantiateAnimation("InsideImage1Pulsating");
-    CEGUI::Window* guiInsideImg1Win = guiRoot->getChild("InnerPartContainer/InsideImage1"); 
-    guiInsideImg1AnimInst->setTargetWindow(guiInsideImg1Win);
-    guiInsideImg1AnimInst->start();
-    
-    CEGUI::AnimationInstance* guiTopBarAnimInst = guiAnimgr.instantiateAnimation("TopBarMoveInAnimation");
-    CEGUI::Window* guiTopBarWin = guiRoot->getChild("TopBar"); 
-    guiTopBarAnimInst->setTargetWindow(guiTopBarWin);
-    guiTopBarAnimInst->start();
-
-    CEGUI::AnimationInstance* guiBotBarAnimInst = guiAnimgr.instantiateAnimation("BotBarMoveInAnimation");
-    CEGUI::Window* guiBotBarWin = guiRoot->getChild("BotBar"); 
-    guiBotBarAnimInst->setTargetWindow(guiBotBarWin);
-    guiBotBarAnimInst->start();
-#endif
-    
-    _logger->trace("Entering event loop...");
-    uint32_t neo = 0, old, delta;
-    float_t delta_f;
-    while(device->run()) {
-        old = neo;
-        neo = device->getTimer()->getTime();
-        delta = neo-old;
-        delta_f = delta/1000.0;
-        if(device->isWindowActive())
-        {
-            driver->beginScene(true, true, irr::video::SColor(255, 100, 101, 140));
-            smgr->drawAll();
-
-#ifdef WITH_CEGUI
-            CEGUI::System::getSingleton().renderAllGUIContexts();
-            CEGUI::System::getSingleton().injectTimePulse(delta_f);
-#endif
-            rotate_x(tnode, 6.25*M_PI , delta_f);
-
-            driver->endScene();
-        }
-        else
-            device->yield();
-    }
-
-#ifdef WITH_CEGUI
-    CEGUI::System::destroy();
-    CEGUI::IrrlichtRenderer::destroy(guiRend);
-#endif
-
-    _logger->trace("Exiting...");
+    GUI gui;
+    gui.init();
 
     return 0;
 }

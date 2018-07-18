@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <Animations>
-    <AnimationDefinition autoStart="false" duration="1.4" name="StartButtonPulsating" replayMode="loop">
+    <!--AnimationDefinition autoStart="false" duration="1.4" name="StartButtonPulsating" replayMode="loop">
         <Affector applicationMethod="absolute" interpolator="float" property="Alpha">
             <KeyFrame position="0" progression="linear" value="0.5" />
             <KeyFrame position="0.7" progression="quadratic decelerating" value="1.0" />
@@ -13,21 +13,76 @@
             <KeyFrame position="0" progression="linear" value="0.5" />
             <KeyFrame position="2.7" progression="linear" value="1.0" />
         </Affector>
-    </AnimationDefinition>
-    <AnimationDefinition autoStart="false" duration="2.0" name="BotBarMoveInAnimation" replayMode="once">
+    </AnimationDefinition-->
+    <AnimationDefinition autoStart="false" duration="1.0" name="BotBarMoveInAnimation" replayMode="once">
         <Affector applicationMethod="absolute" interpolator="UVector2" property="Position">
-            <KeyFrame position="0.5" progression="linear" value="{{0, 0}, {0.4, 0}}" />
-            <KeyFrame position="1.15" progression="quadratic decelerating" value="{{0, 0}, {-0.02, 0}}" />
-            <KeyFrame position="1.27" progression="linear" value="{{0, 0}, {0, 0}}" />
+            <KeyFrame position="0.25" progression="linear" value="{{0, 0}, {0.4, 0}}" />
+            <KeyFrame position="0.55" progression="quadratic decelerating" value="{{0, 0}, {-0.02, 0}}" />
+            <KeyFrame position="0.63" progression="linear" value="{{0, 0}, {0, 0}}" />
         </Affector>
     </AnimationDefinition>
-    <AnimationDefinition autoStart="false" duration="2.0" name="TopBarMoveInAnimation" replayMode="once">
+    <AnimationDefinition autoStart="false" duration="1.0" name="TopBarMoveInAnimation" replayMode="once">
         <Affector applicationMethod="absolute" interpolator="UVector2" property="Position">
-            <KeyFrame position="0.5" progression="linear" value="{{0, 0}, {-0.4, 0}}" />
-            <KeyFrame position="1.15" progression="quadratic decelerating" value="{{0, 0}, {0.02, 0}}" />
-            <KeyFrame position="1.27" progression="linear" value="{{0, 0}, {0, 0}}" />
+            <KeyFrame position="0.25" progression="linear" value="{{0, 0}, {-0.4, 0}}" />
+            <KeyFrame position="0.55" progression="quadratic decelerating" value="{{0, 0}, {0.02, 0}}" />
+            <KeyFrame position="0.63" progression="linear" value="{{0, 0}, {0, 0}}" />
         </Affector>
     </AnimationDefinition>
+    <AnimationDefinition autoStart="false" duration="1.0" name="RigMotionContainerMoveInAnimation" replayMode="once">
+        <Affector applicationMethod="relative" interpolator="UVector2" property="Position">
+            <KeyFrame position="0.25" progression="linear" value="{{-0.4, 0}, {0, 0}}" />
+            <KeyFrame position="0.55" progression="quadratic decelerating" value="{{0.02, 0}, {0, 0}}" />
+            <KeyFrame position="0.63" progression="linear" value="{{0, 0}, {0, 0}}" />
+        </Affector>
+    </AnimationDefinition>
+    <AnimationDefinition autoStart="false" duration="1.0" name="CamDataContainerMoveInAnimation" replayMode="once">
+        <Affector applicationMethod="relative" interpolator="UVector2" property="Position">
+            <KeyFrame position="0.25" progression="linear" value="{{0.6, 0}, {0, 0}}" />
+            <KeyFrame position="0.55" progression="quadratic decelerating" value="{{-0.02, 0}, {0, 0}}" />
+            <KeyFrame position="0.63" progression="linear" value="{{0, 0}, {0, 0}}" />
+        </Affector>
+    </AnimationDefinition>
+    <AnimationDefinition autoStart="false" duration="0.5" name="StartQuitContainerZoomInAnimation" replayMode="once">
+        <Affector property="Size" interpolator="USize" applicationMethod="relative multiply">
+            <KeyFrame position="0.0" value="0.0" />
+            <KeyFrame position="0.5" progression="linear" value="1.0" />
+        </Affector>
+    </AnimationDefinition>
+    
+    <AnimationDefinition autoStart="false" duration="0.8" name="RefreshPortMouseOverAnimation" replayMode="loop">
+        <Affector applicationMethod="relative" interpolator="QuaternionSlerp" property="Rotation">
+            <KeyFrame position="0.0" progression="linear" value="x:0 y:0 z:0" />
+            <KeyFrame position="0.4" progression="linear" value="x:0 y:0 z:180" />
+            <KeyFrame position="0.8" progression="linear" value="x:0 y:0 z:360" />
+        </Affector>
+    </AnimationDefinition>
+    <AnimationDefinition autoStart="false" duration="0.2" name="RefreshPortMouseClickAnimation" replayMode="once">
+        <Affector applicationMethod="absolute" interpolator="float" property="Alpha">
+            <KeyFrame position="0.0" sourceProperty="Alpha" />
+            <KeyFrame position="0.19" progression="quadratic decelerating" value="0.6" />
+            <KeyFrame position="0.2" progression="discrete" value="1.0" />
+        </Affector>
+    </AnimationDefinition>
+    <AnimationDefinition autoStart="false" duration="0.5" name="ButtonMouseOverAnimation" replayMode="loop">
+        <Affector applicationMethod="absolute" interpolator="float" property="Alpha">
+            <KeyFrame position="0.0" sourceProperty="Alpha" />
+            <KeyFrame position="0.25" progression="quadratic accelerating" value="0.6" />
+            <KeyFrame position="0.5" progression="quadratic decelerating" value="1.0" />
+        </Affector>
+    </AnimationDefinition>
+    <AnimationDefinition autoStart="false" duration="0.4" name="ButtonMouseClickAnimation" replayMode="once">
+        <Affector applicationMethod="relative" interpolator="UVector2" property="Position">
+            <KeyFrame position="0.05" progression="linear" value="{{0.025, 0}, {-0.025, 0}}" />
+            <KeyFrame position="0.1" progression="linear" value="{{-0.025, 0}, {0.025, 0}}" />
+            <KeyFrame position="0.15" progression="linear" value="{{0.020, 0}, {-0.020, 0}}" />
+            <KeyFrame position="0.2" progression="linear" value="{{-0.020, 0}, {0.020, 0}}" />
+            <KeyFrame position="0.25" progression="linear" value="{{0.015, 0}, {-0.015, 0}}" />
+            <KeyFrame position="0.3" progression="linear" value="{{-0.015, 0}, {0.015, 0}}" />
+            <KeyFrame position="0.35" progression="linear" value="{{0.01, 0}, {-0.01, 0}}" />
+            <KeyFrame position="0.4" progression="linear" value="{{0, 0}, {0, 0}}" />
+        </Affector>
+    </AnimationDefinition>
+    
     <!--<AnimationDefinition autoStart="false" duration="3" name="InsideBlendIn" replayMode="once">
         <Affector applicationMethod="absolute" interpolator="float" property="Alpha">
             <KeyFrame position="0.0" progression="linear" value="0.0" />

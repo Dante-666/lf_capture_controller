@@ -8,8 +8,7 @@ SRCEXT := cc
 SOURCES := $(shell find  $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%, $(BUILDDIR)/%, $(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g -std=gnu++14 -fPIC
-#CFLAGS += -DWITH_CEGUI
-INC := -Iinc -I/usr/local/include -I/usr/local/include/cegui-0
+INC := -Iinc -I/usr/include/irrlicht -I/usr/local/include -I/usr/local/include/cegui-0
 
 LIB := $(shell pkg-config --libs opencv)
 LIB += -lpthread

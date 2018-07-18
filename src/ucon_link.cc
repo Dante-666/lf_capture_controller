@@ -25,16 +25,14 @@
 
 #include "ucon_link.h"
 
-UConLink::UConLink(const char* port, const int baud, const char* fmt) {
-    //TODO: do this from a file probably
+UConLink::UConLink(const char* port, const char* baud, const char* fmt) noexcept(false){
+    //TODO: do this by reading a enviornment variable
     _logger = spdlog::stdout_color_mt("UConLink");
     _logger->set_level(spdlog::level::trace);
 
     _logger->trace("Opening file {0}", port);
-    this->fd = open(port, O_RDWR | O_NOCTTY);// | O_NDELAY);
+    this->fd = open(port, O_RDWR | O_NOCTTY);
 
-    // TODO: handshake mechanism, uC sends message continously
-    // untill acknowledged by the PC    
     if(this->fd == -1) {
         _logger->error("error {0}", errno);
         switch (errno) {
@@ -47,7 +45,8 @@ UConLink::UConLink(const char* port, const int baud, const char* fmt) {
                 break;
 
         }
-        exit(-1);
+        this->~UConLink();
+        throw ucon_link::serial_file_open();
     } else {
         _logger->trace("Serial port {0} opened sucessfully.", port);
     }
@@ -55,7 +54,14 @@ UConLink::UConLink(const char* port, const int baud, const char* fmt) {
     struct termios params;
     memset(&params, 0, sizeof(termios));
 
-    cfsetspeed(&params, baud);
+    std::string baud_rate = baud;
+    
+    /*-- If experimenting with a different baud rate, do add things over here --*/
+    if(baud_rate == "B4800") {
+        cfsetspeed(&params, B4800);
+    } else {
+        cfsetspeed(&params, B4800);
+    }
     _logger->trace("Speed : {0}, {1}", params.c_ispeed, params.c_ospeed);
 
     unsigned int flag;
@@ -67,7 +73,7 @@ UConLink::UConLink(const char* port, const int baud, const char* fmt) {
     else {
         _logger->error("Invalid frame format {0}!!!", fmt);
         this->~UConLink();
-        exit(-1);
+        throw ucon_link::bad_setting();
     }
 
     if(fmt[0] == '8')
@@ -81,7 +87,7 @@ UConLink::UConLink(const char* port, const int baud, const char* fmt) {
     else {
         _logger->error("Invalid frame format {0}!!!", fmt);
         this->~UConLink();
-        exit(-1);
+        throw ucon_link::bad_setting();
     }
 
     if(fmt[2] == '2')
@@ -89,7 +95,7 @@ UConLink::UConLink(const char* port, const int baud, const char* fmt) {
     else if(fmt[2] != '1') {
         _logger->error("Invalid frame format {0}!!!", fmt);
         this->~UConLink();
-        exit(-1);
+        throw ucon_link::bad_setting();
     }
         
 
@@ -99,7 +105,7 @@ UConLink::UConLink(const char* port, const int baud, const char* fmt) {
     if (tcsetattr(this->fd, TCSANOW, &params) != 0) {
         _logger->error("Error in setting termios attributes!!!");
         this->~UConLink();
-        exit(-1);
+        throw ucon_link::bad_setting();
     }
     else
         _logger->trace("Baud rate : {0}, Stopbits : {1}, Length : {2}, Parity : {3}", baud, fmt[2], fmt[0], fmt[1]);
@@ -107,8 +113,14 @@ UConLink::UConLink(const char* port, const int baud, const char* fmt) {
 }
 
 UConLink::~UConLink() {
+    spdlog::drop("UConLink");
     if(this->fd)
         close(this->fd);
+}
+
+bool UConLink::checkPort(const char* port) {
+    if(access(port, F_OK) == 0) return true;
+    else return false;
 }
 
 void UConLink::readByte(uint8_t* data) {
