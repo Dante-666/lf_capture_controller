@@ -1,6 +1,6 @@
-# Thesis(Variable till the project takes shape)
+# Cartesian Manipulator
 
-This code is written for my thesis and more description will follow as the project takes shape.
+This code describes a cartesian Manipulator rig upon which a camera can be mounted and an interface is used to capture images.
 
 # Hardware design
 
@@ -33,11 +33,6 @@ Mechanical manufacturing ensures an accuracy within a micron for everything to f
 
 The rig is designed to have a fixed dimension and the software associated with it tries to match with the hardware. Rig is camera or camera array agnostic and extending the DataGrabber class will provide the functionality of taking data from the sensor. It was designed to simulate complex multi-camera arrays and explore the properties of The Light Field(reference here).
 
-TODO: Design a generic rig that can be used to move the cameras around.(Working on this)
-TODO: Software for making generic (x,y) motion with minimal inputs as possible.
-TODO: Integrate Kinect 360 camera with this.(On hold till thermal paste arrives)
-TODO: Integrate Depth grabbing.
-TODO: Build a GUI on top of this.
 
 # Dependencies
 
